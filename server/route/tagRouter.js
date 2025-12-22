@@ -1,13 +1,12 @@
+// server/route/tagRouter.js
 import express from 'express';
 
 const router = express.Router();
 
-
 router.get('/', (req, res) => {});
-router.get('/:id', (req, res) => {});
 router.post('/', (req, res) => {});
-router.patch('/:id', (req, res) => {});
-router.delete('/:id', (req, res) => {});
-
+router.get('/:tagId', (req, res) => {});
+router.patch('/:tagId', (req, res) => {});
+router.delete('/:tagId', (req, res) => {});
 
 export default router;

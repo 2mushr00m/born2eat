@@ -3,12 +3,12 @@
 import { fetchHtml } from '../../common/http.js';
 import { BasicError } from '../../common/error.js';
 import { parseNumber } from '../../common/check.js';
-import { CRAWL_STATUS } from '../../common/status.js';
+import { CRAWL_STATUS } from '../../common/constants.js';
 import { makeLoc } from '../../common/loc.js';
 
-/** @typedef {import('../crawlerType.js').Scraper} Scraper */
-/** @typedef {import('../crawlerType.js').ScrapResult} Result */
-/** @typedef {import('../crawlerType.js').ScrapRestaurant} Restaurant */
+/** @typedef {import('../../model/crawlerType.js').Scraper} Scraper */
+/** @typedef {import('../../model/crawlerType.js').ScrapResult} Result */
+/** @typedef {import('../../model/crawlerType.js').ScrapRestaurant} Restaurant */
 
 
 const BASE_URL = 'https://ihq.co.kr/channel/program/tip/?p_id=235';

@@ -1,14 +1,11 @@
+// route/inquiryRouter.js
 import express from 'express';
-import db from '../repository/db.js';
+import * as inquiryController from '../controller/inquiryController.js'
+import { uploaders } from '../middleware/upload.js';
+import { sessionUser } from '../middleware/auth.js';
 
 const router = express.Router();
 
-
-router.get('/', (req, res) => {});
-router.get('/:id', (req, res) => {});
-router.post('/', (req, res) => {});
-router.patch('/:id', (req, res) => {});
-router.delete('/:id', (req, res) => {});
-
+router.post('/', sessionUser, uploaders.inquiry, inquiryController.create);
 
 export default router;

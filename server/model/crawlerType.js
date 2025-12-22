@@ -42,7 +42,7 @@
  * @property {string|null}     message
  * @property {string}          crawl_url
  * @property {string|null}     aired_at
- * @property {Restaurant[]} restaurants
+ * @property {ScrapRestaurant[]} restaurants
  */
 
 /**
@@ -52,3 +52,5 @@
  * @property {() => Promise<number>} latestEpisode
  * @property {(episode_no:number) => Promise<ScrapResult>} parseEpisode
  */
+
+export {};

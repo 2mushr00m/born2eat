@@ -1,3 +1,4 @@
+// server/route/regionRouter.js
 import express from 'express';
 import db from '../repository/db.js';
 import { parseNumber, requireString } from '../common/check.js';
@@ -5,7 +6,6 @@ import { makeLoc } from '../common/loc.js';
 
 const router = express.Router();
 const loc = makeLoc(import.meta.url);
-
 
 router.get('/', async (req, res, next) => {
     try {
@@ -44,6 +44,5 @@ router.get('/', async (req, res, next) => {
         next(err);
     }
 });
-
 
 export default router;

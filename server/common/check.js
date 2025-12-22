@@ -1,116 +1,226 @@
-// server/common/check.js
+// common/check.js
+import { AppError, ERR } from './error.js';
+import logger from './logger.js';
 
-import { BasicError } from './error.js';
 
-/**
- * @typedef {Object} CheckOptions
- * @property {string} [location] - 에러 발생 위치 (예: 'fileName.functionName')
- * @property {Object} [data]     - 추가 컨텍스트 (요청 body, query, params 등)
- */
-
-/**
- * 필수 문자열 검사
- *
+/** 필수 문자열 검사
  * @param {any} value
- * @param {string} fieldName
- * @param {CheckOptions} [opts]
+ * @param {string} field
  * @returns {string}
- * @throws {BasicError}
  */
-export function requireString(value, fieldName, { location, data } = {}) {
-    if (typeof value !== 'string' || value.trim() === '') {
-        throw new BasicError(`${fieldName} 값이 String 형식이 아니거나 비어 있습니다.`, {
-            code: 'INVALID_STRING',
-            status: 400,
-            location,
-            data,
+export function requireString(value, field) {
+    if (value == null)
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값이 누락되었습니다.`,
+            data: { keys: [field] },
         });
-    }
-    return value.trim();
+    if (typeof value !== 'string')
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값은 문자열이어야 합니다.`,
+            data: { keys: [field], extra: { valueType: typeof value } },
+        });
+
+    const trimmed = value.trim();
+    if (!trimmed)
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값은 비어 있을 수 없습니다.`,
+            data: { keys: [field] },
+        });
+    return trimmed;
 }
 
-/**
- * 숫자 변환 & 검사
- *
+/** 필수 문자열 검사(원문 유지: 비밀번호/토큰 등)
  * @param {any} value
- * @param {string} fieldName
- * @param {Object} [opts]
- * @param {boolean} [opts.nullable=false]     // true면 빈 값 허용하고 null 반환
- * @param {boolean} [opts.positive=false]     // true면 양수만 허용
- * @param {boolean} [opts.integer=false]      // true면 정수로 반환
- * @param {number}  [opts.min]               // 최소값(이상)
- * @param {number}  [opts.max]               // 최대값(이하)
- * @param {string}  [opts.location]
- * @param {Object}  [opts.data]
- * @param {string}  [opts.code]              // 기본: MISSING_NUMBER/INVALID_NUMBER/OUT_OF_RANGE 등
- * @param {number}  [opts.status]            // 기본: 400
+ * @param {string} field
+ * @returns {string}
+ */
+export function requireStringNoTrim(value, field) {
+    if (value == null)
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값이 누락되었습니다.`,
+            data: { keys: [field] },
+        });
+    if (typeof value !== 'string')
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값은 문자열이어야 합니다.`,
+            data: { keys: [field], extra: { valueType: typeof value } },
+        });
+
+    if (value.length === 0)
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값은 비어 있을 수 없습니다.`,
+            data: { keys: [field] },
+        });
+
+    // 공백만으로 구성된 문자열 거부
+    if (!value.replace(/\s/g, '').length)
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값은 공백만으로 구성될 수 없습니다.`,
+            data: { keys: [field] },
+        });
+
+    return value;
+}
+
+/** number 파서
+ * @param {any} value
+ * @param {string} field
+ * @param {{
+ *   nullable?: boolean,  // true면 빈 값 허용하고 null 반환
+ *   positive?: boolean,  // true면 0 이상만 허용
+ *   integer?: boolean,   // true면 정수로 반환(소수면 절삭 + warn)
+ *   autoFix?: boolean,   // true면 자동 보정
+ *   min?: number,        // 최소값(이상)
+ *   max?: number,        // 최대값(이하)
+ * }} [opts]
  * @returns {number|null}
- * @throws {BasicError}
  */
 export function parseNumber(
-    value, fieldName, {
-        nullable = false, positive = false, integer = false, min, max,
-        location, data, code, status, } = {},
-) {
+    value, field,
+  { nullable = false, positive = false, integer = false, autoFix = false, min, max } = {}) {
+
+    // 1) 빈 값
     if (value === undefined || value === null || value === '') {
         if (nullable) return null;
-
-        throw new BasicError(`${fieldName} 값이 비어 있습니다.`, {
-            code: code || 'MISSING_NUMBER',
-            status: status || 400,
-            location,
-            data,
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값이 비어 있습니다.`,
+            data: { keys: [field] },
         });
     }
 
-    const n = Number(value);
-
+    // 2) 숫자 변환
+    let n = Number(value);
     if (!Number.isFinite(n)) {
-        throw new BasicError(`${fieldName} 값이 Number 형식이 아닙니다.`, {
-            code: code || 'INVALID_NUMBER',
-            status: status || 400,
-            location,
-            data: { ...data, raw: value },
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값이 Number 형식이 아닙니다.`,
+            data: { keys: [field], extra: { value } },
         });
     }
     
+    // 3) 정수 변환
     if (integer && !Number.isInteger(n)) {
         const converted = Math.trunc(n);
-        logger.warn({
-            code: 'PARSE_TO_INTEGER',
-            message: `${fieldName} 값이 정수가 아니라서 정수로 변환했습니다.`,
-            location,
-            data: { ...data, raw: n, converted },
-        });
-        n = converted;
+        if (autoFix) {
+            logger.warn({
+                code: 'COERCE_INT',
+                message: `${field} 값이 정수가 아니라서 정수로 보정했습니다.`,
+                data: { keys: [field], extra: { value, converted } },
+            });
+            n = converted;
+        } else {
+            throw new AppError(ERR.VALIDATION, {
+                message: `${field} 값은 정수여야 합니다.`,
+                data: { keys: [field], extra: { value } },
+            });
+        }
     }
     
-    if (positive && n < 0) {
-        throw new BasicError(`${fieldName} 값은 0 이상이어야 합니다.`, {
-            code: code || 'POSITIVE_NUMBER_REQUIRED',
-            status: status || 400,
-            location,
-            data: { ...data, value: n },
-        });
+    // 4) 양수 검사
+    if (positive && n <= 0) {
+        if (autoFix) {
+            const converted = 1;
+            logger.warn({
+                code: 'COERCE_POSITIVE',
+                message: `${field} 값이 0 이하라 1로 보정했습니다.`,
+                data: { keys: [field], extra: { value: n, converted } },
+            });
+            n = converted;
+        } else {
+            throw new AppError(ERR.VALIDATION, {
+                message: `${field} 값은 0보다 커야 합니다.`,
+                data: { keys: [field], extra: { value: n } },
+            });
+        }
     }
 
+    // 5) 범위 검사
     if (min != null && n < min) {
-        throw new BasicError(`${fieldName} 값은 ${min} 이상이어야 합니다.`, {
-            code: code || 'OUT_OF_RANGE',
-            status: status || 400,
-            location,
-            data: { ...data, value: n, min },
-        });
+        if (autoFix) {
+            const converted = min;
+            logger.warn({
+                code: 'COERCE_RANGE',
+                message: `${field} 값이 최소값보다 작아 ${min}으로 보정했습니다.`,
+                data: { keys: [field], extra: { value: n, min, converted } },
+            });
+            n = converted;
+        } else {
+            throw new AppError(ERR.VALIDATION, {
+                message: `${field} 값은 ${min} 이상이어야 합니다.`,
+                data: { keys: [field], extra: { value: n, min } },
+            });
+        }
     }
-
     if (max != null && n > max) {
-        throw new BasicError(`${fieldName} 값은 ${max} 이하여야 합니다.`, {
-            code: code || 'OUT_OF_RANGE',
-            status: status || 400,
-            location,
-            data: { ...data, value: n, max },
-        });
+        if (autoFix) {
+            const converted = max;
+            logger.warn({
+                code: 'COERCE_RANGE',
+                message: `${field} 값이 최대값보다 커서 ${max}으로 보정했습니다.`,
+                data: { keys: [field], extra: { value: n, max, converted } },
+            });
+            n = converted;
+        } else {
+            throw new AppError(ERR.VALIDATION, {
+                message: `${field} 값은 ${max} 이하여야 합니다.`,
+                data: { keys: [field], extra: { value: n, max } },
+            });
+        }
     }
 
     return n;
+}
+
+/** id 전용 파서
+ * @param {any} raw
+ * @returns {number}
+ */
+export function parseId(raw) {
+    return parseNumber(raw, 'id', { integer: true, positive: true });
+}
+
+/** boolean 파서
+ * @param {any} raw
+ * @param {string} field
+ * @param {{ nullable?: boolean }} [opt]
+ * @returns {boolean|null}
+ */
+export function parseBoolean(raw, field, opt = {}) {
+    const { nullable = false } = opt;
+
+    if (raw == null) {
+        if (nullable) return null;
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값이 누락되었습니다.`,
+            data: { keys: [field] },
+        });
+    }
+
+    if (typeof raw === 'boolean') return raw;
+
+    if (typeof raw === 'number') {
+        if (raw === 0) return false;
+        if (raw === 1) return true;
+        if (nullable) return null;
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값의 형식이 올바르지 않습니다.`,
+            data: { keys: [field], extra: { value: raw } },
+        });
+    }
+
+    const s = String(raw).trim().toLowerCase();
+    if (s === '') {
+        if (nullable) return null;
+        throw new AppError(ERR.VALIDATION, {
+            message: `${field} 값이 누락되었습니다.`,
+            data: { keys: [field] },
+        });
+    }
+
+    if (['true', '1', 'yes', 'y', 'on'].includes(s)) return true;
+    if (['false', '0', 'no', 'n', 'off'].includes(s)) return false;
+
+    throw new AppError(ERR.VALIDATION, {
+        message: `${field} 값의 형식이 올바르지 않습니다.`,
+        data: { keys: [field], extra: { value: raw } },
+    });
 }

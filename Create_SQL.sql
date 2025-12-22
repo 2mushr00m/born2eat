@@ -146,14 +146,15 @@ FOR EACH ROW
 CREATE TABLE user (
     user_id        BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT COMMENT '사용자 PK',
     email          VARCHAR(255)     NOT NULL COMMENT '이메일',
-    password       VARCHAR(255)     NULL COMMENT '비밀번호',
-    
-    name           VARCHAR(50)      NOT NULL COMMENT '표시 이름',
+    password_hash  VARCHAR(255)     NOT NULL COMMENT '비밀번호 해시',
+    nickname       VARCHAR(50)      NOT NULL UNIQUE COMMENT '표시 이름',
     phone          VARCHAR(20)      NULL COMMENT '전화번호',
     profile_url    VARCHAR(255)     NULL COMMENT '프로필 이미지 URL',
-    role           ENUM('admin', 'user') NOT NULL DEFAULT 'user' COMMENT '권한 등급',
-    status         ENUM('ACTIVE', 'SUSPENDED', 'DELETED') NOT NULL DEFAULT 'ACTIVE' COMMENT '계정 상태',
+    role           ENUM('ADMIN', 'USER') NOT NULL DEFAULT 'USER' COMMENT '권한 등급',
+    status         ENUM('ACTIVE', 'SUSPENDED', 'BANNED', 'DELETED') NOT NULL DEFAULT 'ACTIVE' COMMENT '계정 상태',
     created_at     DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입 시각',
+    deleted_at     DATETIME         NULL COMMENT '탈퇴 시각',
+    suspended_until DATETIME        NULL COMMENT '정지 만료 시각',
 
     PRIMARY KEY (user_id),
     UNIQUE KEY uq_user_email (email)
@@ -196,8 +197,9 @@ CREATE TABLE restaurant_photo (
     photo_id         INT UNSIGNED      NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '사진 PK',
     restaurant_id    INT UNSIGNED      NOT NULL COMMENT '음식점 FK',
 
-    photo_type       ENUM('MAIN', 'MENU_BOARD', 'FOOD', 'INTERIOR', 'ETC')
+    photo_type       ENUM('MAIN', 'MENU_BOARD', 'ETC')
                      NOT NULL DEFAULT 'ETC' COMMENT '사진 종류',
+    sort_order       TINYINT UNSIGNED  NULL COMMENT '노출 우선순위', -- 작을수록 먼저, NULL이면 자동정렬
     file_path        VARCHAR(255)      NOT NULL COMMENT '이미지 경로 또는 URL',
     caption          VARCHAR(255)      NULL COMMENT '캡션(설명)',
 
@@ -205,11 +207,9 @@ CREATE TABLE restaurant_photo (
                      NOT NULL DEFAULT 'USER' COMMENT '사진 제공 주체 유형',
     source_user_id   BIGINT UNSIGNED   NULL COMMENT '제보자 유저 ID',
 
-    is_main          TINYINT UNSIGNED  NOT NULL DEFAULT 0 COMMENT '대표 사진 여부',
     created_at       DATETIME          NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '업로드 시각',
-    updated_at       DATETIME          NOT NULL DEFAULT CURRENT_TIMESTAMP
-                     ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
 
+    KEY ix_restaurant_photo_list (restaurant_id, photo_type, sort_order, created_at),
     CONSTRAINT fk_restaurant_photo_restaurant
         FOREIGN KEY (restaurant_id) REFERENCES restaurant(restaurant_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
@@ -284,63 +284,6 @@ CREATE TABLE review_photo (
         FOREIGN KEY (review_id) REFERENCES review(review_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 6-4. review INSERT 트리거
-CREATE TRIGGER trg_review_ai_agg
-AFTER INSERT ON review
-FOR EACH ROW
-UPDATE restaurant r
-   SET review_count = (
-           SELECT COUNT(*)
-             FROM review v
-            WHERE v.restaurant_id = r.restaurant_id
-              AND v.is_visible = 1
-       ),
-       rating_sum = (
-           SELECT IFNULL(SUM(v.rating), 0)
-             FROM review v
-            WHERE v.restaurant_id = r.restaurant_id
-              AND v.is_visible = 1
-       )
- WHERE r.restaurant_id = NEW.restaurant_id;
-
--- 6-5. review UPDATE 트리거
-CREATE TRIGGER trg_review_au_agg
-AFTER UPDATE ON review
-FOR EACH ROW
-UPDATE restaurant r
-   SET review_count = (
-           SELECT COUNT(*)
-             FROM review v
-            WHERE v.restaurant_id = r.restaurant_id
-              AND v.is_visible = 1
-       ),
-       rating_sum = (
-           SELECT IFNULL(SUM(v.rating), 0)
-             FROM review v
-            WHERE v.restaurant_id = r.restaurant_id
-              AND v.is_visible = 1
-       )
- WHERE r.restaurant_id IN (OLD.restaurant_id, NEW.restaurant_id);
-
--- 6-6. review DELETE 트리거
-CREATE TRIGGER trg_review_ad_agg
-AFTER DELETE ON review
-FOR EACH ROW
-UPDATE restaurant r
-   SET review_count = (
-           SELECT COUNT(*)
-             FROM review v
-            WHERE v.restaurant_id = r.restaurant_id
-              AND v.is_visible = 1
-       ),
-       rating_sum = (
-           SELECT IFNULL(SUM(v.rating), 0)
-             FROM review v
-            WHERE v.restaurant_id = r.restaurant_id
-              AND v.is_visible = 1
-       )
- WHERE r.restaurant_id = OLD.restaurant_id;
 
 -- 7. broadcast 테이블
 CREATE TABLE broadcast (
@@ -417,9 +360,6 @@ CREATE TABLE inquiry (
     status       ENUM('PENDING', 'ANSWERED')
                  NOT NULL DEFAULT 'PENDING' COMMENT '처리 상태',
     created_at   DATETIME          NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '문의 생성 시각',
-    updated_at   DATETIME          NOT NULL DEFAULT CURRENT_TIMESTAMP
-                 ON UPDATE CURRENT_TIMESTAMP COMMENT '문의 수정 시각',
-
     answer       TEXT              NULL COMMENT '답변 내용',
     answered_by_user_id BIGINT UNSIGNED NULL COMMENT '답변한 관리자 FK',
     answered_at  DATETIME          NULL COMMENT '답변한 시각',
@@ -432,11 +372,12 @@ CREATE TABLE inquiry (
         ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사용자 문의';
 
--- 8-1. inquiry_photo 테이블
-CREATE TABLE inquiry_photo (
+-- 8-1. inquiry_image 테이블
+CREATE TABLE inquiry_image (
     inquiry_id  INT UNSIGNED   NOT NULL COMMENT '문의 FK',
     file_path   VARCHAR(255)   NOT NULL COMMENT '파일 경로 또는 URL',
-    created_at  DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '업로드 시각',
+
+    KEY idx_inquiry_image_inquiry_id (inquiry_id),
 
     CONSTRAINT fk_inquiry_image_inquiry
         FOREIGN KEY (inquiry_id) REFERENCES inquiry(inquiry_id)

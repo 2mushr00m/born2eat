@@ -5,12 +5,12 @@ import TASTY_GUYS from './scraper/TASTY_GUYS.js';
 import logger from '../common/logger.js';
 import { makeLoc } from '../common/loc.js';
 import { BasicError, NotFoundError } from '../common/error.js';
-import { CRAWL_STATUS } from '../common/status.js';
+import { CRAWL_STATUS } from '../common/constants.js';
 
-/** @typedef {import('./crawlerType.js').Scraper} Scraper */
-/** @typedef {import('./crawlerType.js').CrawlParams} Params */
-/** @typedef {import('./crawlerType.js').CrawlResult} Result */
-/** @typedef {import('./crawlerType.js').ScrapRestaurant} Restaurant */
+/** @typedef {import('../model/crawlerType.js').Scraper} Scraper */
+/** @typedef {import('../model/crawlerType.js').CrawlParams} Params */
+/** @typedef {import('../model/crawlerType.js').CrawlResult} Result */
+/** @typedef {import('../model/crawlerType.js').ScrapRestaurant} Restaurant */
 
 /** @type {Record<string, Scraper>} */
 const SCRAPERS = {

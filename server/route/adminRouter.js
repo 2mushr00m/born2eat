@@ -1,12 +1,9 @@
-// router/adminRouter.js
-import { Router } from 'express';
-// import { requireAdmin } from '../middleware/auth.js';
-// import adminRestaurantRouter from './adminRestaurantRouter.js';
+// server/route/adminRouter.js
+import express from 'express';
+import adminRestaurantRouter from './admin/restaurantRouter.js';
 
-const router = Router();
+const router = express.Router();
 
-// 이 아래 전체에 관리자 권한 필요
-// adminRouter.use(requireAdmin);
-// adminRouter.use('/restaurants', adminRestaurantRouter);
+router.use('/restaurants', adminRestaurantRouter);
 
 export default router;
