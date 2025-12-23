@@ -1,5 +1,14 @@
 {
-  "dependencies": {
-    "bcrypt": "^6.0.0"
+  "name": "born2eat",
+  "private": true,
+  "scripts": {
+    "server:install": "npm --prefix server install",
+    "server:dev": "npm --prefix server run dev",
+    "server:start": "npm --prefix server run start",
+    "server:format": "npm --prefix server run format",
+
+    "app:install": "npm --prefix app install",
+    "app:dev": "npm --prefix app run dev",
+    "app:build": "npm --prefix app run build"
   }
 }

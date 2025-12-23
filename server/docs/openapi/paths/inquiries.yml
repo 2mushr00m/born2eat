@@ -1,0 +1,20 @@
+inquiries:
+  post:
+    tags: [Inquiries]
+    summary: 문의하기 (파일 업로드)
+    description: uploaders.inquiry (multipart/form-data)
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            description: 문의 등록 폼(필드 상세는 추후 확정)
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '400': { $ref: ../components/responses.yml#/responses/BadRequest }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }

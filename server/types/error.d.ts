@@ -3,22 +3,22 @@
 export {};
 
 export type ErrType = {
-    code: string;
-    status: number;
-    message: string;
-    expose?: boolean;
-    level?: 'WARN' | 'ERROR';
-    stack?: boolean;
+  code: string;
+  status: number;
+  message: string;
+  expose?: boolean;
+  level?: 'WARN' | 'ERROR';
+  stack?: boolean;
 };
 export type ErrData = {
-    targetId?: string | number;
-    keys?: string[];
+  targetId?: string | number;
+  keys?: string[];
 
-    dbCode?: string;
+  dbCode?: string;
 
-    apiUrl?: string;
-    apiStatus?: number;
-    apiCode?: string;
+  apiUrl?: string;
+  apiStatus?: number;
+  apiCode?: string;
 
-    extra?: Record<string, unknown>;
+  extra?: Record<string, unknown>;
 };

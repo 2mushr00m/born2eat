@@ -1,0 +1,780 @@
+openapi: 3.0.3
+info:
+  title: Born2Eat API
+  version: 1.0.0
+  description: |
+    Born2Eat 백엔드 API 문서입니다.
+    - Success: { success: true } 또는 { success: true, result: ... }
+    - Error:   { success: false, code, message }
+    - Auth:    세션 쿠키 기반 (cookieAuth)
+servers:
+  - url: http://localhost:8080
+    description: Local
+tags:
+  - name: Auth
+  - name: Me
+  - name: Restaurants
+  - name: Reviews
+  - name: Inquiries
+  - name: Admin
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Auth
+      summary: 회원가입
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 회원가입 payload (상세는 추후 확정)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: 로그인
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 로그인 payload (상세는 추후 확정)
+      responses:
+        '200':
+          description: OK (Set-Cookie)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: 로그아웃
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOnly'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /inquiries:
+    post:
+      tags:
+        - Inquiries
+      summary: 문의하기 (파일 업로드)
+      description: uploaders.inquiry (multipart/form-data)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              description: 문의 등록 폼(필드 상세는 추후 확정)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /me:
+    get:
+      tags:
+        - Me
+      summary: 내 정보
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/Internal'
+    patch:
+      tags:
+        - Me
+      summary: 내 정보 수정 (프로필 업로드)
+      description: uploaders.profile (multipart/form-data)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              description: 프로필 수정 폼(필드 상세는 추후 확정)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/Internal'
+    delete:
+      tags:
+        - Me
+      summary: 회원탈퇴
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOnly'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /me/password:
+    patch:
+      tags:
+        - Me
+      summary: 비밀번호 수정
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 비밀번호 변경 payload(상세는 추후 확정)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOnly'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /me/inquiries:
+    get:
+      tags:
+        - Me
+      summary: 내 문의 목록
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /me/inquiries/{inquiryId}:
+    get:
+      tags:
+        - Me
+      summary: 내 문의 상세보기
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: inquiryId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /me/reviews:
+    get:
+      tags:
+        - Me
+      summary: 내 리뷰 목록
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /restaurants:
+    get:
+      tags:
+        - Restaurants
+      summary: 음식점 목록
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /restaurants/{restaurantId}:
+    get:
+      tags:
+        - Restaurants
+      summary: 음식점 상세보기
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /restaurants/{restaurantId}/reviews:
+    get:
+      tags:
+        - Restaurants
+      summary: 해당 음식점의 리뷰보기
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+    post:
+      tags:
+        - Restaurants
+      summary: 해당 음식점에 리뷰쓰기
+      description: requireAuth + blockSuspendedUser
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 리뷰 작성 payload(상세는 추후 확정)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /reviews/{reviewId}:
+    patch:
+      tags:
+        - Reviews
+      summary: 리뷰 수정
+      description: /reviews prefix에 requireAuth + patch에 blockSuspendedUser
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: reviewId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 리뷰 수정 payload(상세는 추후 확정)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+    delete:
+      tags:
+        - Reviews
+      summary: 리뷰 삭제
+      description: /reviews prefix에 requireAuth
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: reviewId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOnly'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /admin/inquiries:
+    get:
+      tags:
+        - Admin
+      summary: 문의 목록(관리자)
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /admin/inquiries/{inquiryId}:
+    get:
+      tags:
+        - Admin
+      summary: 문의 상세보기(관리자)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: inquiryId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+    patch:
+      tags:
+        - Admin
+      summary: 문의 답변(관리자)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: inquiryId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 문의 답변 payload(상세는 추후 확정)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /admin/restaurants:
+    get:
+      tags:
+        - Admin
+      summary: 음식점 목록(관리자)
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/Internal'
+    post:
+      tags:
+        - Admin
+      summary: 음식점 생성
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 음식점 생성 payload(상세는 추후 확정)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /admin/restaurants/{restaurantId}:
+    get:
+      tags:
+        - Admin
+      summary: 음식점 상세보기(관리자)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+    patch:
+      tags:
+        - Admin
+      summary: 음식점 수정
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 음식점 수정 payload(상세는 추후 확정)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+    delete:
+      tags:
+        - Admin
+      summary: 음식점 삭제
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOnly'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+  /admin/reviews:
+    get:
+      tags:
+        - Admin
+      summary: 리뷰 목록(관리자)
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/Internal'
+    delete:
+      tags:
+        - Admin
+      summary: 리뷰 숨기기(관리자)
+      description: hard delete 대신 is_visible=0 처리
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 숨김 처리 대상(상세는 추후 확정)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOnly'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/Internal'
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sid
+      description: |
+        세션 쿠키 기반 인증입니다.
+        실제 쿠키 이름은 .env(SESSION_COOKIE_NAME)로 바뀔 수 있으므로,
+        운영에서 sid가 아니라면 이 값을 프로젝트 설정에 맞게 수정하세요.
+  schemas:
+    SuccessResult:
+      type: object
+      required:
+        - success
+        - result
+      properties:
+        success:
+          type: boolean
+          example: true
+        result:
+          description: API별 결과 payload
+          nullable: true
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - code
+        - message
+      properties:
+        success:
+          type: boolean
+          example: false
+        code:
+          type: string
+          example: UNAUTHORIZED
+        message:
+          type: string
+          example: 로그인이 필요합니다.
+    SuccessOnly:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+  responses:
+    BadRequest:
+      description: BAD_REQUEST / VALIDATION
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Internal:
+      description: INTERNAL / DB / EXTERNAL_API
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: UNAUTHORIZED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: NOT_FOUND
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: FORBIDDEN
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: CONFLICT
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: TOO_MANY_REQUESTS
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

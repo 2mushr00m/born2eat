@@ -1,4 +1,3 @@
-
 // =========== Request ===========
 
 /** 목록 조회용 필터
@@ -40,8 +39,6 @@
  * @property {boolean|null} [is_published]
  * @property {'RAW'|'BASIC'|'VERIFIED'} [data_status]
  */
-
-
 
 // =========== Response ===========
 
@@ -90,12 +87,12 @@
  * @property {number} restaurant_id
  * @property {string} name
  * @property {string|null} kakao_place_id     - 카카오맵 place_id
- * 
+ *
  * @property {string|null} food_category      - 음식 분류 카테고리
  * @property {string|null} main_food          - 대표 메뉴/카테고리 이름
  * @property {string|null} main_photo         - 대표 사진 url
  * @property {string|null} address            - 전체 주소 문자열
- * 
+ *
  * @property {number|null} longitude          - 경도 (x)
  * @property {number|null} latitude           - 위도 (y)
  *
@@ -136,7 +133,7 @@
  * @property {Broadcast[]} broadcasts         - 방송/OTT/유튜브 정보
  * @property {PhotosGroup} photos             - 사진 그룹
  * @property {Region} region                  - 지역 depth1~2 이름
- * 
+ *
  * @property {string[]} tags                  - 태그 목록 (분위기/상황/추가 food 태그 등)
  */
 

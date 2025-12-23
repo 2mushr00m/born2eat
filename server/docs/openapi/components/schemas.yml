@@ -1,0 +1,33 @@
+schemas:
+  SuccessOnly:
+    type: object
+    required: [success]
+    properties:
+      success:
+        type: boolean
+        example: true
+
+  SuccessResult:
+    type: object
+    required: [success, result]
+    properties:
+      success:
+        type: boolean
+        example: true
+      result:
+        description: API별 결과 payload
+        nullable: true
+
+  ErrorResponse:
+    type: object
+    required: [success, code, message]
+    properties:
+      success:
+        type: boolean
+        example: false
+      code:
+        type: string
+        example: UNAUTHORIZED
+      message:
+        type: string
+        example: 로그인이 필요합니다.

@@ -11,6 +11,9 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import session from 'express-session';
+import YAML from 'yaml';
+import swaggerUi from 'swagger-ui-express';
+import fs from 'fs';
 
 // 3) 내부 공용 모듈
 import logger from './common/logger.js';
@@ -19,112 +22,116 @@ import { uploadAppError } from './middleware/upload.js';
 import { sessionUser, requireAuth, requireAdmin } from './middleware/auth.js';
 
 // 4) 라우터
-import adminRouter from './route/adminRouter.js';
-import authRouter from './route/authRouter.js';
-import restaurantRouter from './route/restaurantRouter.js';
-import reviewRouter from './route/reviewRouter.js';
-import userRouter from './route/userRouter.js';
-import meRouter from './route/meRouter.js';
-import inquiryRouter from './route/inquiryRouter.js';
-import crawlerRouter from './route/crawlerRouter.js';
-import tagRouter from './route/tagRouter.js';
+import adminRouter from './routes/adminRouter.js';
+import authRouter from './routes/authRouter.js';
+import restaurantRouter from './routes/restaurantRouter.js';
+import reviewRouter from './routes/reviewRouter.js';
+import userRouter from './routes/userRouter.js';
+import meRouter from './routes/meRouter.js';
+import inquiryRouter from './routes/inquiryRouter.js';
+import crawlerRouter from './routes/crawlerRouter.js';
+import tagRouter from './routes/tagRouter.js';
 
-const ALLOWED_ORIGINS = [
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-];
+const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
 const app = express();
 app.set('trust proxy', true); // HTTP → HTTPS
 
-
 // 5) 보안/공통 미들웨어
 app.use(helmet());
-app.use(cors({
+app.use(
+  cors({
     origin(origin, cb) {
-        if (!origin) return cb(null, true);
-        if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-        return cb(new AppError(ERR.FORBIDDEN, {
-            logMessage: 'CORS origin이 허용되지 않습니다.',
-            data: { origin },
-        }));
+      if (!origin) return cb(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+      return cb(
+        new AppError(ERR.FORBIDDEN, {
+          logMessage: 'CORS origin이 허용되지 않습니다.',
+          data: { origin },
+        }),
+      );
     },
     credentials: true,
-    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-    allowedHeaders: ['Content-Type','Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     optionsSuccessStatus: 204,
-}));
+  }),
+);
 app.use(compression());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// 6) 세션
+// 6) 세션 쿠키
 const isProd = process.env.NODE_ENV === 'production';
-app.use(session({
+app.use(
+  session({
     name: process.env.SESSION_COOKIE_NAME || 'sid',
     secret: process.env.SESSION_SECRET || 'dev-session-secret',
     resave: false,
     saveUninitialized: false,
     rolling: true,
     cookie: {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: isProd, // HTTPS에서만 true
-        maxAge: 1000 * 60 * 60 * 24 * 7 // 7일
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: isProd, // HTTPS에서만 true
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
     },
-}));
+  }),
+);
 
-// 7) 쿠키
-
-// 8) 정적 파일
+// 7) Swagger
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const openapiPath = path.join(__dirname, 'docs', 'openapi.bundle.yml');
+const openapiText = fs.readFileSync(openapiPath, 'utf8');
+const openapiSpec = YAML.parse(openapiText);
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+app.get('/openapi.json', (req, res) => res.json(openapiSpec));
+
+// 8) 정적 파일
 app.use('/upload', express.static(path.join(__dirname, 'upload')));
 
 // 9) 라우터 연결
-app.use('/admin', sessionUser, requireAuth, requireAdmin, adminRouter);
-app.use('/auth', authRouter);
-app.use('/restaurants', restaurantRouter);
-app.use('/reviews', reviewRouter);
 app.use('/tags', tagRouter);
+app.use('/restaurants', sessionUser, restaurantRouter);
+app.use('/reviews', sessionUser, requireAuth, reviewRouter);
+app.use('/inquiries', sessionUser, inquiryRouter);
 app.use('/users', userRouter);
+app.use('/auth', authRouter);
 app.use('/me', sessionUser, requireAuth, meRouter);
-app.use('/inquiries', sessionUser, requireAuth, inquiryRouter);
-app.use('/crawler', crawlerRouter);
+app.use('/admin', sessionUser, requireAuth, requireAdmin, adminRouter);
+app.use('/crawler', crawlerRouter); // 추후 admin 라우터 밑으로 옮길 예정
 
 // 10) 404 처리 미들웨어
 app.use((req, res, next) => {
-    next(new AppError(ERR.NOT_FOUND));
+  next(new AppError(ERR.NOT_FOUND));
 });
 
 // 11) 공통 에러 처리 미들웨어
 app.use((err, req, res, next) => {
-    
-    // 1) multer / upload 에러 변환
-    if (!(err instanceof AppError))
-        err = uploadAppError(err);
+  // 1) multer / upload 에러 변환
+  if (!(err instanceof AppError)) err = uploadAppError(err);
 
-    // 2) 완전 미정의 에러 → INTERNAL
-    if (!(err instanceof AppError))
-        err = new AppError(ERR.INTERNAL, { cause: err });
-        
-    // 3) 로깅
-    const payload = { err, method: req.method, path: req.originalUrl ?? req.path };
-    if (err.logLevel === 'WARN') logger.warn(payload);
-    else logger.error(payload);
+  // 2) 완전 미정의 에러 → INTERNAL
+  if (!(err instanceof AppError)) err = new AppError(ERR.INTERNAL, { cause: err });
 
-    res.status(err.status).json({
-        success: false,
-        code: err.code,
-        message: err.expose ? err.message : ERR.INTERNAL.message,
-    });
+  // 3) 로깅
+  const payload = { err, method: req.method, path: req.originalUrl ?? req.path };
+  if (err.logLevel === 'WARN') logger.warn(payload);
+  else logger.error(payload);
+
+  res.status(err.status).json({
+    success: false,
+    code: err.code,
+    message: err.expose ? err.message : ERR.INTERNAL.message,
+  });
 });
 
 // 12) 서버 시작
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-    logger.info({
-        code: 'SERVER_START',
-        message: `Server started on port ${PORT}`,
-    });
-})
+  logger.info({
+    code: 'SERVER_START',
+    message: `Server started on port ${PORT}`,
+  });
+});

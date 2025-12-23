@@ -1,0 +1,9 @@
+securitySchemes:
+  cookieAuth:
+    type: apiKey
+    in: cookie
+    name: sid
+    description: |
+      세션 쿠키 기반 인증입니다.
+      실제 쿠키 이름은 .env(SESSION_COOKIE_NAME)로 바뀔 수 있으므로,
+      운영에서 sid가 아니라면 이 값을 프로젝트 설정에 맞게 수정하세요.

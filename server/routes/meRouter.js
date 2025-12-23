@@ -1,0 +1,20 @@
+// routes/meRouter.js
+import express from 'express';
+import * as meController from '../controllers/meController.js';
+import * as inquiryController from '../controllers/inquiryController.js';
+import * as reviewController from '../controllers/reviewController.js';
+import { uploaders } from '../middleware/upload.js';
+
+const router = express.Router();
+
+router.get('/', meController.read);
+router.patch('/', uploaders.profile, meController.update);
+router.delete('/', meController.destroy);
+
+router.patch('/password', meController.password);
+router.get('/inquiries', inquiryController.myList);
+router.get('/inquiries/:inquiryId', inquiryController.myRead);
+router.get('/reviews', reviewController.myList);
+// router.get('/likes', meController.likes);
+
+export default router;

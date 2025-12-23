@@ -12,7 +12,7 @@
 
 /**
  * 크롤링 결과
- * 
+ *
  * @typedef {Object} CrawlResult
  * @property {string} broadcast_code
  * @property {number} broadcast_id
@@ -22,7 +22,6 @@
  * @property {number[]} skippedEpisodes
  * @property {number[]} failedEpisodes
  */
-
 
 /**
  * @typedef {Object} ScrapRestaurant

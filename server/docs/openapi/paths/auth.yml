@@ -1,0 +1,51 @@
+signup:
+  post:
+    tags: [Auth]
+    summary: 회원가입
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            description: 회원가입 payload (상세는 추후 확정)
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '400': { $ref: ../components/responses.yml#/responses/BadRequest }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+login:
+  post:
+    tags: [Auth]
+    summary: 로그인
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            description: 로그인 payload (상세는 추후 확정)
+    responses:
+      '200':
+        description: OK (Set-Cookie)
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '400': { $ref: ../components/responses.yml#/responses/BadRequest }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+logout:
+  post:
+    tags: [Auth]
+    summary: 로그아웃
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessOnly }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }

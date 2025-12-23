@@ -9,31 +9,31 @@ import path from 'node:path';
  * @returns {(target: Function|string) => string}
  */
 export function makeLoc(fileUrl) {
-    const filenameWithExt = path.basename(new URL(fileUrl).pathname);
-    const moduleName = filenameWithExt.replace(/\.[^.]+$/, '');
+  const filenameWithExt = path.basename(new URL(fileUrl).pathname);
+  const moduleName = filenameWithExt.replace(/\.[^.]+$/, '');
 
-    /**
-     * @param {Function|string} target
-     * @returns {string}
-     */
-    return function loc(target) {
-        // 1) 함수가 넘어온 경우: moduleName.fnName
-        if (typeof target === 'function') {
-            const fnName = target.name || 'anonymous';
-            return `${moduleName}.${fnName}`;
-        }
+  /**
+   * @param {Function|string} target
+   * @returns {string}
+   */
+  return function loc(target) {
+    // 1) 함수가 넘어온 경우: moduleName.fnName
+    if (typeof target === 'function') {
+      const fnName = target.name || 'anonymous';
+      return `${moduleName}.${fnName}`;
+    }
 
-        // 2) 문자열이 넘어온 경우
-        if (typeof target === 'string') {
-            // 이미 'Foo.bar' 형태면 그대로 사용
-            if (target.includes('.')) {
-                return target;
-            }
-            // 그렇지 않으면 'moduleName.target'
-            return `${moduleName}.${target}`;
-        }
+    // 2) 문자열이 넘어온 경우
+    if (typeof target === 'string') {
+      // 이미 'Foo.bar' 형태면 그대로 사용
+      if (target.includes('.')) {
+        return target;
+      }
+      // 그렇지 않으면 'moduleName.target'
+      return `${moduleName}.${target}`;
+    }
 
-        // 3) 그 외 예외적인 경우
-        return `${moduleName}.unknown`;
-    };
+    // 3) 그 외 예외적인 경우
+    return `${moduleName}.unknown`;
+  };
 }

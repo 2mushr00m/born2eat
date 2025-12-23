@@ -1,0 +1,205 @@
+// controllers/requests/reviewRequest.js
+import { requireString, parseNumber, parseBoolean } from '../../common/check.js';
+
+/** @typedef {import('express').Request} Request */
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 50;
+
+/** 목록 조회 filter
+ * @param {Request} req
+ * @returns {review.ListFilter} */
+function buildListFilter(req) {
+  const query = req?.query || {};
+
+  const page =
+    parseNumber(query.page, 'page', {
+      integer: true,
+      positive: true,
+      nullable: true,
+      autoFix: true,
+    }) ?? DEFAULT_PAGE;
+
+  const limit =
+    parseNumber(query.limit, 'limit', {
+      integer: true,
+      positive: true,
+      nullable: true,
+      autoFix: true,
+      max: MAX_LIMIT,
+    }) ?? DEFAULT_LIMIT;
+
+  /** @type {review.ListFilter} */
+  const filter = { page, limit };
+  return filter;
+}
+
+/** 공개 목록 조회 filter
+ * @param {Request} req
+ * @returns {review.ListFilter} */
+export function buildPublicListFilter(req) {
+  const filter = buildListFilter(req);
+  const restaurantId = parseId(req.params?.id);
+  filter.restaurantId = restaurantId;
+  filter.isVisible = true;
+  return filter;
+}
+
+/** 사용자 목록 조회 filter
+ * @param {Request} req
+ * @returns {review.ListFilter} */
+export function buildMyListFilter(req) {
+  const filter = buildListFilter(req);
+  filter.userId = req.user?.userId ?? null;
+  return filter;
+}
+
+/** 관리자 목록 조회 filter
+ * @param {Request} req
+ * @returns {review.ListFilter} */
+export function buildAdminListFilter(req) {
+  const filter = buildListFilter(req);
+  const query = req?.query || {};
+
+  if (query.restaurantId != null) {
+    const v = parseNumber(query.restaurantId, 'restaurantId', {
+      integer: true,
+      positive: true,
+      nullable: true,
+      autoFix: true,
+    });
+    if (v != null) filter.restaurantId = v;
+  }
+
+  if (query.userId != null) {
+    const v = parseNumber(query.userId, 'userId', {
+      integer: true,
+      positive: true,
+      nullable: true,
+      autoFix: true,
+    });
+    if (v != null) filter.userId = v;
+  }
+
+  if (query.isVisible != null) {
+    const v = parseBoolean(query.isVisible, 'isVisible', { nullable: true });
+    if (v != null) filter.userId = v;
+  }
+
+  const q = query.q == null ? '' : String(query.q).trim();
+  if (q) filter.q = q;
+
+  return filter;
+}
+
+/** 생성 payload
+ * @param {Request} req
+ * @returns {review.CreatePayload} */
+export function buildCreatePayload(req) {
+  const body = req?.body ?? {};
+
+  const rating = parseNumber(body.rating, 'rating', {
+    positive: true,
+    nullable: false,
+    autoFix: true,
+    min: 0.5,
+    max: 5,
+  });
+
+  /** @type {review.CreatePayload} */
+  const payload = {
+    rating,
+    content: requireString(body.content, 'content').trim(),
+  };
+
+  // 이 부분 수정 필요 애초에 tags: string(tagCode)[] 이런 식으로 전달됨.
+  // tags: string[]
+  if (body.tags != null) {
+    const tags = Array.isArray(body.tags) ? body.tags : String(body.tags).split(',');
+    const cleaned = [...new Set(tags.map((t) => String(t).trim()).filter(Boolean))];
+    if (cleaned.length) payload.tags = cleaned;
+  }
+
+  // 이 부분도 체크해볼 것
+  // photos: { filepath, caption? }[]
+  if (body.photos != null) {
+    const arr = Array.isArray(body.photos) ? body.photos : [body.photos];
+    const photos = [];
+    for (const p of arr) {
+      if (!p) continue;
+      const filepath = String(p.filepath ?? '').trim();
+      if (!filepath) continue;
+      const caption = p.caption == null ? undefined : String(p.caption).trim();
+      photos.push({ filepath, caption: caption || undefined });
+    }
+    if (photos.length) payload.photos = photos;
+  }
+
+  return payload;
+}
+
+/** 수정 payload
+ * @param {Request} req
+ * @returns {review.UpdatePayload} */
+export function buildUpdatePayload(req) {
+  const body = req?.body ?? {};
+
+  /** @type {review.UpdatePayload} */
+  const payload = {};
+
+  if (body.rating != null) {
+    const rating = parseNumber(body.rating, 'rating', {
+      positive: true,
+      nullable: true,
+      autoFix: true,
+      min: 0.5,
+      max: 5,
+    });
+    if (rating != null) payload.rating = rating;
+  }
+
+  if (body.content != null) {
+    const content = String(body.content).trim();
+    if (content) payload.content = content;
+  }
+
+  // 이 부분도 체크해볼 것
+  // tags: string[] (추후 단건 추가/삭제까지 확장 가능한 형태로 유지)
+  if (body.tags != null) {
+    const tags = Array.isArray(body.tags) ? body.tags : String(body.tags).split(',');
+    const cleaned = [...new Set(tags.map((t) => String(t).trim()).filter(Boolean))];
+    payload.tags = cleaned;
+  }
+
+  // 이 부분도 체크해볼 것
+  // photos: { id, path, caption }[]
+  // - path: string | null (null이면 삭제 의도 가능)
+  // - caption: string | null
+  if (body.photos != null) {
+    const arr = Array.isArray(body.photos) ? body.photos : [body.photos];
+    const photos = [];
+    for (const p of arr) {
+      if (!p) continue;
+      const id = parseNumber(p.id, 'photos.id', {
+        integer: true,
+        positive: true,
+        nullable: true,
+        autoFix: true,
+      });
+      if (id == null) continue;
+
+      const path = p.path === null ? null : p.path == null ? null : String(p.path).trim();
+      const caption = p.caption === null ? null : p.caption == null ? null : String(p.caption).trim();
+
+      photos.push({
+        id,
+        path: path === '' ? null : path,
+        caption: caption === '' ? null : caption,
+      });
+    }
+    payload.photos = photos;
+  }
+
+  return payload;
+}

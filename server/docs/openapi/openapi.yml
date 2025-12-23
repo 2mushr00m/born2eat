@@ -1,0 +1,78 @@
+openapi: 3.0.3
+info:
+  title: Born2Eat API
+  version: 1.0.0
+  description: |
+    Born2Eat 백엔드 API 문서입니다.
+    - Success: { success: true } 또는 { success: true, result: ... }
+    - Error:   { success: false, code, message }
+    - Auth:    세션 쿠키 기반 (cookieAuth)
+
+servers:
+  - url: http://localhost:8080
+    description: Local
+
+tags:
+  - name: Auth
+  - name: Me
+  - name: Restaurants
+  - name: Reviews
+  - name: Inquiries
+  - name: Admin
+
+paths:
+  # Auth
+  /auths/signup:
+    $ref: ./paths/auth.yml#/signup
+  /auths/login:
+    $ref: ./paths/auth.yml#/login
+  /auths/logout:
+    $ref: ./paths/auth.yml#/logout
+
+  # Inquiries
+  /inquiries:
+    $ref: ./paths/inquiries.yml#/inquiries
+
+  # Me
+  /me:
+    $ref: ./paths/me.yml#/me
+  /me/password:
+    $ref: ./paths/me.yml#/mePassword
+  /me/inquiries:
+    $ref: ./paths/me.yml#/meInquiries
+  /me/inquiries/{inquiryId}:
+    $ref: ./paths/me.yml#/meInquiryById
+  /me/reviews:
+    $ref: ./paths/me.yml#/meReviews
+
+  # Restaurants
+  /restaurants:
+    $ref: ./paths/restaurants.yml#/restaurants
+  /restaurants/{restaurantId}:
+    $ref: ./paths/restaurants.yml#/restaurantById
+  /restaurants/{restaurantId}/reviews:
+    $ref: ./paths/restaurants.yml#/restaurantReviews
+
+  # Reviews (prefix에서 requireAuth 적용)
+  /reviews/{reviewId}:
+    $ref: ./paths/reviews.yml#/reviewById
+
+  # Admin
+  /admin/inquiries:
+    $ref: ./paths/admin.yml#/adminInquiries
+  /admin/inquiries/{inquiryId}:
+    $ref: ./paths/admin.yml#/adminInquiryById
+  /admin/restaurants:
+    $ref: ./paths/admin.yml#/adminRestaurants
+  /admin/restaurants/{restaurantId}:
+    $ref: ./paths/admin.yml#/adminRestaurantById
+  /admin/reviews:
+    $ref: ./paths/admin.yml#/adminReviews
+
+components:
+  securitySchemes:
+    $ref: ./components/security.yml#/securitySchemes
+  schemas:
+    $ref: ./components/schemas.yml#/schemas
+  responses:
+    $ref: ./components/responses.yml#/responses

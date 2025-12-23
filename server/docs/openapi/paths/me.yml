@@ -1,0 +1,118 @@
+me:
+  get:
+    tags: [Me]
+    summary: 내 정보
+    security: [{ cookieAuth: [] }]
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+  patch:
+    tags: [Me]
+    summary: 내 정보 수정 (프로필 업로드)
+    description: uploaders.profile (multipart/form-data)
+    security: [{ cookieAuth: [] }]
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            description: 프로필 수정 폼(필드 상세는 추후 확정)
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '400': { $ref: ../components/responses.yml#/responses/BadRequest }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+  delete:
+    tags: [Me]
+    summary: 회원탈퇴
+    security: [{ cookieAuth: [] }]
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessOnly }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+mePassword:
+  patch:
+    tags: [Me]
+    summary: 비밀번호 수정
+    security: [{ cookieAuth: [] }]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            description: 비밀번호 변경 payload(상세는 추후 확정)
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessOnly }
+      '400': { $ref: ../components/responses.yml#/responses/BadRequest }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+meInquiries:
+  get:
+    tags: [Me]
+    summary: 내 문의 목록
+    security: [{ cookieAuth: [] }]
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+meInquiryById:
+  get:
+    tags: [Me]
+    summary: 내 문의 상세보기
+    security: [{ cookieAuth: [] }]
+    parameters:
+      - in: path
+        name: inquiryId
+        required: true
+        schema: { type: integer }
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '404': { $ref: ../components/responses.yml#/responses/NotFound }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+meReviews:
+  get:
+    tags: [Me]
+    summary: 내 리뷰 목록
+    security: [{ cookieAuth: [] }]
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }

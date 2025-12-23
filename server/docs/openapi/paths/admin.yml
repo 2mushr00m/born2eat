@@ -1,0 +1,207 @@
+adminInquiries:
+  get:
+    tags: [Admin]
+    summary: 문의 목록(관리자)
+    security: [{ cookieAuth: [] }]
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '403': { $ref: ../components/responses.yml#/responses/Forbidden }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+adminInquiryById:
+  get:
+    tags: [Admin]
+    summary: 문의 상세보기(관리자)
+    security: [{ cookieAuth: [] }]
+    parameters:
+      - in: path
+        name: inquiryId
+        required: true
+        schema: { type: integer }
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '403': { $ref: ../components/responses.yml#/responses/Forbidden }
+      '404': { $ref: ../components/responses.yml#/responses/NotFound }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+  patch:
+    tags: [Admin]
+    summary: 문의 답변(관리자)
+    security: [{ cookieAuth: [] }]
+    parameters:
+      - in: path
+        name: inquiryId
+        required: true
+        schema: { type: integer }
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            description: 문의 답변 payload(상세는 추후 확정)
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '400': { $ref: ../components/responses.yml#/responses/BadRequest }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '403': { $ref: ../components/responses.yml#/responses/Forbidden }
+      '404': { $ref: ../components/responses.yml#/responses/NotFound }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+adminRestaurants:
+  get:
+    tags: [Admin]
+    summary: 음식점 목록(관리자)
+    security: [{ cookieAuth: [] }]
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '403': { $ref: ../components/responses.yml#/responses/Forbidden }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+  post:
+    tags: [Admin]
+    summary: 음식점 생성
+    security: [{ cookieAuth: [] }]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            description: 음식점 생성 payload(상세는 추후 확정)
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '400': { $ref: ../components/responses.yml#/responses/BadRequest }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '403': { $ref: ../components/responses.yml#/responses/Forbidden }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+adminRestaurantById:
+  get:
+    tags: [Admin]
+    summary: 음식점 상세보기(관리자)
+    security: [{ cookieAuth: [] }]
+    parameters:
+      - in: path
+        name: restaurantId
+        required: true
+        schema: { type: integer }
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '403': { $ref: ../components/responses.yml#/responses/Forbidden }
+      '404': { $ref: ../components/responses.yml#/responses/NotFound }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+  patch:
+    tags: [Admin]
+    summary: 음식점 수정
+    security: [{ cookieAuth: [] }]
+    parameters:
+      - in: path
+        name: restaurantId
+        required: true
+        schema: { type: integer }
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            description: 음식점 수정 payload(상세는 추후 확정)
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '400': { $ref: ../components/responses.yml#/responses/BadRequest }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '403': { $ref: ../components/responses.yml#/responses/Forbidden }
+      '404': { $ref: ../components/responses.yml#/responses/NotFound }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+  delete:
+    tags: [Admin]
+    summary: 음식점 삭제
+    security: [{ cookieAuth: [] }]
+    parameters:
+      - in: path
+        name: restaurantId
+        required: true
+        schema: { type: integer }
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessOnly }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '403': { $ref: ../components/responses.yml#/responses/Forbidden }
+      '404': { $ref: ../components/responses.yml#/responses/NotFound }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+adminReviews:
+  get:
+    tags: [Admin]
+    summary: 리뷰 목록(관리자)
+    security: [{ cookieAuth: [] }]
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '403': { $ref: ../components/responses.yml#/responses/Forbidden }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+  delete:
+    tags: [Admin]
+    summary: 리뷰 숨기기(관리자)
+    description: hard delete 대신 is_visible=0 처리
+    security: [{ cookieAuth: [] }]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            description: 숨김 처리 대상(상세는 추후 확정)
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessOnly }
+      '400': { $ref: ../components/responses.yml#/responses/BadRequest }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '403': { $ref: ../components/responses.yml#/responses/Forbidden }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }

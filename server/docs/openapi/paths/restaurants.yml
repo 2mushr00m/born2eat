@@ -1,0 +1,77 @@
+restaurants:
+  get:
+    tags: [Restaurants]
+    summary: 음식점 목록
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '400': { $ref: ../components/responses.yml#/responses/BadRequest }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+restaurantById:
+  get:
+    tags: [Restaurants]
+    summary: 음식점 상세보기
+    parameters:
+      - in: path
+        name: restaurantId
+        required: true
+        schema: { type: integer }
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '404': { $ref: ../components/responses.yml#/responses/NotFound }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+restaurantReviews:
+  get:
+    tags: [Restaurants]
+    summary: 해당 음식점의 리뷰보기
+    parameters:
+      - in: path
+        name: restaurantId
+        required: true
+        schema: { type: integer }
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '404': { $ref: ../components/responses.yml#/responses/NotFound }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
+
+  post:
+    tags: [Restaurants]
+    summary: 해당 음식점에 리뷰쓰기
+    description: requireAuth + blockSuspendedUser
+    security: [{ cookieAuth: [] }]
+    parameters:
+      - in: path
+        name: restaurantId
+        required: true
+        schema: { type: integer }
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            description: 리뷰 작성 payload(상세는 추후 확정)
+    responses:
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema: { $ref: ../components/schemas.yml#/schemas/SuccessResult }
+      '400': { $ref: ../components/responses.yml#/responses/BadRequest }
+      '401': { $ref: ../components/responses.yml#/responses/Unauthorized }
+      '403': { $ref: ../components/responses.yml#/responses/Forbidden }
+      '404': { $ref: ../components/responses.yml#/responses/NotFound }
+      '500': { $ref: ../components/responses.yml#/responses/Internal }
