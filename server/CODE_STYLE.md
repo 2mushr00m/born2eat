@@ -104,7 +104,7 @@ throw new AppError(ERR.NOT_FOUND);
 
 // 2) 메시지 + data
 throw new AppError(ERR.NOT_FOUND, {
-  message: '레스토랑이 존재하지 않습니다.',
+  message: '음식점이 존재하지 않습니다.',
   data: { targetId: restaurantId },
 });
 
@@ -113,7 +113,7 @@ try {
   await repo.insert(row);
 } catch (err) {
   throw new AppError(ERR.DB, {
-    message: '레스토랑 생성 중 문제가 발생했습니다.',
+    message: '음식점 생성 중 문제가 발생했습니다.',
     data: { dbCode: err.code },
     cause: err,
   });
@@ -215,3 +215,5 @@ logger.error({
   cause: err,
 });
 ```
+
+<br/>

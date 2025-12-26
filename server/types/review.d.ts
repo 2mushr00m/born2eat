@@ -24,10 +24,15 @@ declare global {
       rating?: number;
       content?: string;
       tags?: string[];
-      photos?: {
+      photosPatch?: {
         id: number;
-        path: string | null;
-        caption: string | null;
+        delete?: true;
+        caption?: string | null;
+      }[];
+      photoUpload?: {
+        targetId?: number | null;
+        filepath: string;
+        cpation?: string;
       }[];
     };
 
@@ -71,3 +76,5 @@ declare global {
     };
   }
 }
+
+export {};

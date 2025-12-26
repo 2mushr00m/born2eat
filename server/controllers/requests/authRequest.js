@@ -11,8 +11,8 @@ export function buildSignupPayload(req) {
 
   /** @type {auth.SignupPayload} */
   const payload = {
-    email: requireString(body.email, 'email').trim(),
-    password: requireStringNoTrim(body.password, 'password'),
+    email: requireString(body.email, '이메일').trim(),
+    password: requireStringNoTrim(body.password, '비밀번호'),
   };
 
   const phone = body.phone == null ? '' : String(body.phone).trim();
@@ -30,9 +30,9 @@ export function buildLoginPayload(req) {
 
   /** @type {auth.LoginPayload} */
   const payload = {
-    email: requireString(body.email, 'email').trim(),
-    password: requireStringNoTrim(body.password, 'password'),
+    email: requireString(body.email, '이메일').trim(),
+    password: requireStringNoTrim(body.password, '비밀번호'),
   };
 
-  return { email, password };
+  return payload;
 }

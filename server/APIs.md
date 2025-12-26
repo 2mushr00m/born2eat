@@ -5,12 +5,7 @@
 
 📌 이 문서는 Born2Eat 백엔드의 **미들웨어 적용 범위**와 각 API의 `METHOD · PATH · 기능 요약`을 정리합니다.
 
-각 항목의 상세한 요청·응답 스펙과 예시는 Swagger에서 확인할 수 있으며, 서버 실행 후 `/swagger`로 접속합니다.
-
-<br/>
-
-> **요청 조건(Auth), 파라미터(Query/Path/Body), 응답 형식, 에러 케이스** 등 상세한 설명은 Swagger를 참고하세요.<br/><br/>
-> _※ 프로젝트의 Swagger 경로/operationId에 따라 링크는 필요 시 조정하세요._
+각 항목의 상세한 요청·응답 스펙과 예시는 Stoplight Elements에서 확인할 수 있으며, 서버 실행 후 `/apis`로 접속합니다.
 
 <br/>
 
@@ -62,88 +57,6 @@
 /me            (sessionUser + requireAuth)
 /admin         (sessionUser + requireAuth + requireAdmin)
 ```
-
-<br/>
-
-## 📦 엔드포인트 목록
-
-<details>
-  <summary><b>/restaurants</b></summary>
-
-- `GET /restaurants`: 음식점 목록
-- `GET /restaurants/:restaurantId`: 음식점 상세보기
-- `GET /restaurants/:restaurantId/reviews`: 해당 음식점의 리뷰 보기
-- `POST /restaurants/:restaurantId/reviews`: 해당 음식점에 리뷰 작성 (로그인 필요 + 비정지 회원)
-
-</details>
-
-<details>
-  <summary><b>/reviews</b> : 로그인 필요</summary>
-
-- `PATCH /reviews/:reviewsId`: 리뷰 수정 (비정지 회원)
-- `DELETE /reviews/:reviewsId`: 리뷰 삭제
-
-</details>
-
-<details>
-  <summary><b>/users</b></summary>
-
-- (작성 예정) 사용자 관련 API
-
-</details>
-
-<details>
-  <summary><b>/auth</b></summary>
-
-- `POST /auth/signup`: 회원가입
-- `POST /auth/login`: 로그인
-- `POST /auth/logout`: 로그아웃
-
-</details>
-
-<details>
-  <summary><b>/me</b> : 로그인 필요</summary>
-
-- `GET /me`: 내 정보
-- `PATCH /me`: 내 정보 수정
-- `DELETE /me`: 회원탈퇴
-- `PATCH /me/password`: 비밀번호 수정
-- `GET /me/inquiries`: 내 문의 목록
-- `GET /me/inquiries/:inquiryId`: 내 문의 상세보기
-- `GET /me/reviews`: 내 리뷰 목록
-
-</details>
-
-<details>
-  <summary><b>/inquiries</b></summary>
-
-- `POST /inquiries`: 문의하기
-
-</details>
-
-<details>
-  <summary><b>/admin</b> : 관리자 전용</summary>
-
-###
-
-- `GET /admin/inquiries`: 문의 목록
-- `GET /admin/inquiries/:inquiryId`: 문의 상세보기
-- `PATCH /admin/inquiries/:inquiryId`: 문의 답변
-
-###
-
-- `GET /admin/restaurants`: 음식점 목록
-- `GET /admin/restaurants/:restaurantId`: 음식점 상세보기
-- `POST /admin/restaurants`: 음식점 생성
-- `PATCH /admin/restaurants/:restaurantId`: 음식점 수정
-- `DELETE /admin/restaurants/:restaurantId`: 음식점 삭제
-
-###
-
-- `GET /admin/reviews`: 리뷰 목록
-- `DELETE /admin/reviews`: 리뷰 숨기기
-
-</details>
 
 <br/>
 

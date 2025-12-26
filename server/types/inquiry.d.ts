@@ -25,16 +25,16 @@ declare global {
 
     // ========== Service → Controller =======
 
-    // GET /inquiries - item
     type Item = {
       inquiryId: number;
-      userId: number | null;
-      userNickname: string | null;
       title: string;
+      content: string;
       type: InquiryType;
       status: InquiryStatus;
       createdAt: Date;
-      answeredAt: Date;
+      answer: string | null;
+      imagePaths: string[];
+      answeredAt: Date | null;
     };
 
     // GET /inquiries
@@ -45,25 +45,22 @@ declare global {
       total: number;
     };
 
-    // GET /inquiries/:inquiryId
-    type Detail = {
-      inquiryId: number;
+    // GET /admin/inquiries/:inquiryId
+    type Admin = Item & {
       userId: number | null;
       userNickname: string | null;
-      title: string;
-      content: string;
-      type: InquiryType;
-      status: InquiryStatus;
-      createdAt: Date;
-      answer: string | null;
-      answeredAt: Date | null;
-      imagePaths: string[];
-    };
-
-    // GET /admin/inquiries/:inquiryId
-    type DetailAdmin = Detail & {
       answeredByUserId: number | null;
       answeredByUserNickname: string | null;
     };
+
+    // GET /admin/inquiries
+    type AdminList = {
+      items: Admin[];
+      page: number;
+      limit: number;
+      total: number;
+    };
   }
 }
+
+export {};

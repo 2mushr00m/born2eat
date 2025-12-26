@@ -1,0 +1,1944 @@
+openapi: 3.1.0
+info:
+  title: Born2Eat API
+  description: Born2Eat 백엔드 API 문서입니다.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local
+tags:
+  - name: Auth
+  - name: Inquiries
+  - name: Me
+  - name: Restaurants
+  - name: Reviews
+  - name: Admin
+paths:
+  /auth/signup:
+    post:
+      summary: 회원가입
+      deprecated: false
+      description: ''
+      tags:
+        - Auth
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  title: ''
+                  description: 이메일
+                password:
+                  type: string
+                  title: ''
+                  description: 비밀번호
+                phone:
+                  type: string
+                  description: 전화번호
+                  title: ''
+              required:
+                - email
+                - password
+            examples:
+              '1':
+                value:
+                  email: new-email@email.com
+                  password: new-email
+                summary: 생성
+              '2':
+                value:
+                  email: test@test.com
+                  password: test
+                summary: 사용 중인 이메일
+              '3':
+                value:
+                  email: wrong@wrong.com
+                  password: ''
+                summary: 잘못된 요청
+        required: true
+      responses:
+        '201':
+          description: 회원가입 즉시 로그인
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/UserItem'
+                    required:
+                      - result
+              example:
+                success: true
+                result:
+                  userId: 3
+                  email: 3d73g23hr_3d23fr3i453@gmail.com
+                  nickname: 맛집탐험대-67JHOH
+                  profileUrl: null
+                  role: USER
+                  status: ACTIVE
+                  suspendedUntil: null
+          headers: {}
+        '400':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseError'
+              example:
+                success: false
+                code: VALIDATION
+                message: password 값은 문자열이어야 합니다.
+          headers: {}
+        '409':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseError'
+              example:
+                success: false
+                code: CONFLICT
+                message: 이미 사용 중인 이메일입니다.
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /auth/login:
+    post:
+      summary: 로그인
+      deprecated: false
+      description: ''
+      tags:
+        - Auth
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  title: ''
+                  description: 이메일
+                password:
+                  type: string
+                  title: ''
+                  description: 비밀번호
+              required:
+                - email
+                - password
+            examples:
+              '1':
+                value:
+                  email: admin@admin.com
+                  password: admin
+                summary: 사용자
+              '2':
+                value:
+                  email: admin@admin.com
+                  password: admin
+                summary: 관리자
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/UserItem'
+                    required:
+                      - result
+          headers: {}
+        '401':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseError'
+              example:
+                success: false
+                code: UNAUTHORIZED
+                message: 이메일 또는 비밀번호가 올바르지 않습니다.
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /auth/logout:
+    post:
+      summary: 로그아웃
+      deprecated: false
+      description: ''
+      tags:
+        - Auth
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseSuccess'
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /inquiries:
+    post:
+      summary: 문의하기
+      deprecated: false
+      description: >
+        현재 `/inquiries`는 식당 제보를 포함한 모든 문의를 **식당과 연결하지 않고** 저장합니다. 따라서 **특정 식당 관련
+        문의만 따로 모아 조회하는 기능은 지원하지 않습니다.**
+
+
+        * 현재 DB에 문의와 식당을 연결할 `restaurant_id` FK 필드가 없어, 문의를 특정 식당으로 분류/조회할 수
+        없습니다.
+
+        * 추후 식당별 문의 기능이 필요해지면, DB에 `restaurant_id` FK를 추가하고 `POST
+        /restaurants/{restaurantId}/inquiries` 형태의 엔드포인트로 구현할 예정입니다.
+      tags:
+        - Inquiries
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  default: GENERAL
+                  enum:
+                    - GENERAL
+                    - BUG
+                    - RESTAURANT
+                    - ACCOUNT
+                    - OTHER
+                  description: 유형
+                  examples:
+                    - ACCOUNT
+                  example: ACCOUNT
+                title:
+                  description: 제목
+                  type: string
+                  examples:
+                    - 계정 관련 문의
+                  example: 계정 관련 문의
+                content:
+                  description: 내용
+                  type: string
+                  examples:
+                    - 이메일을 바꾸고 싶습니다.
+                  example: 이메일을 바꾸고 싶습니다.
+                images:
+                  format: binary
+                  type: string
+                  description: 이미지 파일
+                  examples:
+                    - - ''
+                      - ''
+                  example: ''
+              required:
+                - type
+                - title
+                - content
+            examples: {}
+        required: true
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/Id'
+                    required:
+                      - result
+              example:
+                success: true
+                result:
+                  id: 3
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /me:
+    get:
+      summary: 내 정보
+      deprecated: false
+      description: ''
+      tags:
+        - Me
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            description: 회원 PK
+                          email:
+                            type: string
+                            description: 이메일
+                          nickname:
+                            type: string
+                            description: 닉네임
+                          profileUrl:
+                            type:
+                              - string
+                              - 'null'
+                            description: 프로필 URL
+                          role:
+                            $ref: '#/components/schemas/UserRole'
+                            description: 역할
+                          status:
+                            $ref: '#/components/schemas/UserStatus'
+                            description: 상태
+                          suspendedUntil:
+                            type:
+                              - string
+                              - 'null'
+                            format: date-time
+                            description: 정지 기한
+                        required:
+                          - userId
+                          - email
+                          - nickname
+                          - profileUrl
+                          - role
+                          - status
+                          - suspendedUntil
+                    required:
+                      - result
+              example:
+                success: true
+                result:
+                  userId: 1
+                  email: test@test.com
+                  nickname: 닉네임 변경
+                  profileUrl: null
+                  role: USER
+                  status: ACTIVE
+                  suspendedUntil: null
+          headers: {}
+        '401':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseError'
+              example:
+                success: false
+                code: UNAUTHORIZED
+                message: 로그인이 필요합니다.
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+    patch:
+      summary: 내 정보 수정
+      deprecated: false
+      description: ''
+      tags:
+        - Me
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  description: 닉네임
+                  type: string
+                  examples:
+                    - TEST
+                  example: TEST
+                phone:
+                  type: string
+                  description: 전화번호
+                  examples:
+                    - ''
+                  example: ''
+                profile:
+                  description: 파일 첨부
+                  type: string
+                  format: binary
+                  examples:
+                    - ''
+                  example: ''
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            description: 회원 PK
+                          email:
+                            type: string
+                            description: 이메일
+                          nickname:
+                            type: string
+                            description: 닉네임
+                          profileUrl:
+                            type:
+                              - string
+                              - 'null'
+                            description: 프로필 URL
+                          role:
+                            $ref: '#/components/schemas/UserRole'
+                            description: 역할
+                          status:
+                            $ref: '#/components/schemas/UserStatus'
+                            description: 상태
+                          suspendedUntil:
+                            type:
+                              - string
+                              - 'null'
+                            format: date-time
+                            description: 정지 기한
+                        required:
+                          - userId
+                          - email
+                          - nickname
+                          - profileUrl
+                          - role
+                          - status
+                          - suspendedUntil
+                    required:
+                      - result
+              example:
+                success: true
+                result:
+                  userId: 1
+                  email: test@test.com
+                  nickname: TEST
+                  profileUrl: /upload/profiles/1-1766580174683-d19d5055.png
+                  role: USER
+                  status: ACTIVE
+                  suspendedUntil: null
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+    delete:
+      summary: 회원탈퇴
+      deprecated: false
+      description: ''
+      tags:
+        - Me
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseSuccess'
+              example:
+                success: true
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /me/inquiries:
+    get:
+      summary: 내 문의 목록
+      deprecated: false
+      description: ''
+      tags:
+        - Me
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: q
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: string
+            enum:
+              - PENDING
+              - ANSWERED
+        - name: page
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: integer
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result: {}
+                    required:
+                      - result
+              example:
+                success: true
+                result:
+                  items:
+                    - inquiryId: 12
+                      userId: 1
+                      userNickname: TEST
+                      title: 계정 관련 문의
+                      type: ACCOUNT
+                      status: PENDING
+                      createdAt: '2025-12-24T12:11:44.000Z'
+                      answeredAt: null
+                    - inquiryId: 8
+                      userId: 1
+                      userNickname: TEST
+                      title: 기본 문의
+                      type: GENERAL
+                      status: PENDING
+                      createdAt: '2025-12-24T11:36:40.000Z'
+                      answeredAt: null
+                    - inquiryId: 7
+                      userId: 1
+                      userNickname: TEST
+                      title: 로그인된 사용자 확인
+                      type: ACCOUNT
+                      status: PENDING
+                      createdAt: '2025-12-24T11:32:34.000Z'
+                      answeredAt: null
+                  page: 1
+                  limit: 10
+                  total: 3
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /me/reviews:
+    get:
+      summary: 내 리뷰 목록
+      deprecated: false
+      description: ''
+      tags:
+        - Me
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties: {}
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /restaurants:
+    get:
+      summary: 음식점 목록
+      deprecated: false
+      description: ''
+      tags:
+        - Restaurants
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties: {}
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /restaurants/{restaurantId}:
+    get:
+      summary: 음식점 상세보기
+      deprecated: false
+      description: ''
+      tags:
+        - Restaurants
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: restaurantId
+          in: path
+          description: ''
+          required: true
+          example: ''
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties: {}
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /restaurants/{restaurantId}/reviews:
+    get:
+      summary: 리뷰 목록
+      deprecated: false
+      description: ''
+      tags:
+        - Restaurants
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: restaurantId
+          in: path
+          description: ''
+          required: true
+          example: ''
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties: {}
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+    post:
+      summary: 리뷰 작성
+      deprecated: false
+      description: 정지 회원 사용 불가.
+      tags:
+        - Restaurants
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: restaurantId
+          in: path
+          description: ''
+          required: true
+          example: ''
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties: {}
+            examples: {}
+        required: true
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties: {}
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /reviews/{reviewId}:
+    patch:
+      summary: 리뷰 수정
+      deprecated: false
+      description: |-
+        정지 회원은 사용 불가.
+        사진 수정 · 삭제 · 추가는 이하 예시를 참고하세요.
+
+        ---
+
+        ### 프론트 FormData 예시
+
+        ```
+        fd.append('content', '수정 내용');  // 리뷰
+        fd.append('tags', 'tagA'); // 태그
+        fd.append('tags', 'tagB');
+        fd.append('tags', 'tagC');
+
+        // 기존 사진 삭제/캡션 변경
+        fd.append('photosPatch', JSON.stringify([
+          { id: 101, delete: true },
+          { id: 102, caption: '캡션 변경' },
+        ]));
+
+        // 기존 사진 변경
+        fd.append('photos', fileA);
+        fd.append('photoIds', '101');
+        fd.append('captions', '사진 변경');
+
+        // 신규 사진 추가
+        fd.append('photos', fileB);
+        fd.append('photoIds', '');
+        fd.append('captions', '');
+        ```
+      tags:
+        - Reviews
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: reviewId
+          in: path
+          description: ''
+          required: true
+          example: ''
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: number
+                  description: 평점
+                  minimum: 1
+                  maximum: 5
+                  examples:
+                    - 4.5
+                  example: 4.5
+                content:
+                  type: string
+                  description: 리뷰 내용
+                  examples:
+                    - 정말 맛있어요
+                  example: 정말 맛있어요
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: tagCode 배열 또는 CSV 문자열
+                  examples:
+                    - - '["tagA", "tagB"]'
+                  example:
+                    - '["tagA", "tagB"]'
+                photosPatch:
+                  type: string
+                  description: 기존 사진의 JSON 문자열
+                  examples:
+                    - '[{"id":101,"delete":true}, {"id":102,"caption":"캡션 변경"}]'
+                  example: '[{"id":101,"delete":true}, {"id":102,"caption":"캡션 변경"}]'
+                photos:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: 새로 첨부한 사진
+                  examples:
+                    - ''
+                  example: ''
+                photoIds:
+                  type: array
+                  items:
+                    type: string
+                  description: photos와 한 세트. id 매칭 시 교체, 빈 값('')이면 추가.
+                  examples:
+                    - - '101'
+                      - ''
+                  example:
+                    - '101'
+                    - ''
+                captions:
+                  type: array
+                  items:
+                    type: string
+                  description: photos와 한 세트. 해당 사진 캡션
+                  examples:
+                    - - 캡션 설정
+                      - ''
+                  example:
+                    - 캡션 설정
+                    - ''
+            examples: {}
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties: {}
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+    delete:
+      summary: 리뷰 삭제
+      deprecated: false
+      description: ''
+      tags:
+        - Reviews
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: reviewId
+          in: path
+          description: ''
+          required: true
+          example: ''
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseSuccess'
+          headers: {}
+      security: []
+  /admin/inquiries:
+    get:
+      summary: 문의 목록
+      deprecated: false
+      description: ''
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: status
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: string
+            enum:
+              - PENDING
+              - ANSWERED
+        - name: userId
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: integer
+        - name: page
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: integer
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/InquiryAdminList'
+                    required:
+                      - result
+              example:
+                success: true
+                result:
+                  items:
+                    - inquiryId: 15
+                      title: 계정 관련 문의
+                      content: 이메일을 바꾸고 싶습니다.
+                      type: ACCOUNT
+                      status: PENDING
+                      answer: null
+                      createdAt: '2025-12-24T19:01:44.000Z'
+                      answeredAt: null
+                      userId: 2
+                      userNickname: 맛집탐험대-RO2IIS
+                      answeredUserId: null
+                      answeredUserNickname: null
+                      imagePaths: []
+                    - inquiryId: 14
+                      title: 음식점 사진 제보
+                      content: 음식 사진 제보합니다.
+                      type: RESTAURANT
+                      status: PENDING
+                      answer: null
+                      createdAt: '2025-12-24T16:10:28.000Z'
+                      answeredAt: null
+                      userId: null
+                      userNickname: null
+                      answeredUserId: null
+                      answeredUserNickname: null
+                      imagePaths:
+                        - /upload/inquiries/0-1766592628427-db0f6fa5.png
+                  page: 1
+                  limit: 2
+                  total: 13
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /admin/inquiries/{inquiryId}:
+    get:
+      summary: 문의 상세보기
+      deprecated: false
+      description: ''
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: inquiryId
+          in: path
+          description: ''
+          required: true
+          example: '15'
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/InquiryAdminItem'
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+    patch:
+      summary: 문의 답변
+      deprecated: false
+      description: ''
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: inquiryId
+          in: path
+          description: ''
+          required: true
+          example: '15'
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answer:
+                  type: string
+                  description: 답변
+              required:
+                - answer
+            example:
+              answer: 해당 문의가 접수되어 반영되었습니다.
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/Id'
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /admin/restaurants:
+    get:
+      summary: 음식점 목록
+      deprecated: false
+      description: ''
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties: {}
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+    post:
+      summary: 음식점 생성
+      deprecated: false
+      description: ''
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/Id'
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /admin/restaurants/{restaurantsId}:
+    get:
+      summary: 음식점 상세보기
+      deprecated: false
+      description: ''
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: restaurantsId
+          in: path
+          description: ''
+          required: true
+          example: ''
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties: {}
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+    patch:
+      summary: 음식점 수정
+      deprecated: false
+      description: ''
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: restaurantsId
+          in: path
+          description: ''
+          required: true
+          example: ''
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 문의 답변 payload (추후 갱신)
+              properties: {}
+            examples: {}
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties: {}
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+    delete:
+      summary: 음식점 삭제
+      deprecated: false
+      description: ''
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: restaurantsId
+          in: path
+          description: ''
+          required: true
+          example: ''
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseSuccess'
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /admin/reviews:
+    get:
+      summary: 리뷰 목록
+      deprecated: false
+      description: ''
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /admin/reviews/{reviewsId}:
+    delete:
+      summary: 리뷰 숨기기
+      deprecated: false
+      description: hard delete 대신 is_visible=0 처리
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: reviewsId
+          in: path
+          description: ''
+          required: true
+          example: ''
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+webhooks: {}
+components:
+  schemas:
+    List:
+      type: object
+      properties:
+        limit:
+          type: integer
+          description: 한 페이지당 개수
+        page:
+          type: integer
+          description: 페이지
+        total:
+          type: integer
+          description: 총 개수
+      required:
+        - limit
+        - page
+        - total
+    ResponseSuccess:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: true
+          description: 성공 여부
+      required:
+        - success
+    ResponseError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          examples:
+            - false
+          default: false
+          description: 성공 여부
+        code:
+          type: string
+          description: 에러 코드
+        message:
+          type: string
+          description: 에러 메시지
+      required:
+        - success
+        - code
+        - message
+    InquiryAdminItem:
+      allOf:
+        - $ref: '#/components/schemas/InquiryItem'
+        - type: object
+          properties:
+            userId:
+              type:
+                - integer
+                - 'null'
+              description: 문의자 FK
+            userNickname:
+              type:
+                - string
+                - 'null'
+              description: 문의자 닉네임
+            answeredByUserId:
+              type:
+                - integer
+                - 'null'
+              description: 답변자 FK
+            answeredByUserNickname:
+              type:
+                - string
+                - 'null'
+              description: 답변자 닉네임
+          required:
+            - userId
+            - userNickname
+            - answeredByUserId
+            - answeredByUserNickname
+    InquiryAdminList:
+      allOf:
+        - $ref: '#/components/schemas/List'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/InquiryAdminItem'
+          required:
+            - items
+    InquiryItem:
+      type: object
+      properties:
+        inquiryId:
+          type: integer
+          description: 문의 PK
+        title:
+          type: string
+          description: 문의 제목
+        content:
+          type: string
+          description: 문의 내용
+        type:
+          $ref: '#/components/schemas/InquiryType'
+          description: 문의 유형
+        status:
+          $ref: '#/components/schemas/InquiryStatus'
+          description: 답변 여부
+        imagePaths:
+          type: array
+          items:
+            type: string
+            description: URL
+          description: 첨부 사진 리스트
+        answer:
+          type:
+            - string
+            - 'null'
+          description: 답변
+        createdAt:
+          type: string
+          format: date-time
+          description: 문의일
+        answeredAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: 답변일
+      required:
+        - inquiryId
+        - title
+        - type
+        - status
+        - createdAt
+        - answeredAt
+        - content
+        - answer
+        - imagePaths
+    Id:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 대상 PK
+      required:
+        - id
+    UserItem:
+      type: object
+      properties:
+        userId:
+          type: integer
+          description: 회원 PK
+        email:
+          type: string
+          description: 이메일
+        nickname:
+          type: string
+          description: 닉네임
+        profileUrl:
+          type:
+            - string
+            - 'null'
+          description: 프로필 URL
+        role:
+          $ref: '#/components/schemas/UserRole'
+          description: 역할
+        status:
+          $ref: '#/components/schemas/UserStatus'
+          description: 상태
+        suspendedUntil:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: 정지 기한
+      required:
+        - userId
+        - email
+        - nickname
+        - profileUrl
+        - role
+        - status
+        - suspendedUntil
+    UserRole:
+      type: string
+      enum:
+        - ADMIN
+        - USER
+      default: USER
+    UserStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - SUSPENDED
+        - BANNED
+        - DELETED
+      default: ACTIVE
+    InquiryType:
+      type: string
+      enum:
+        - GENERAL
+        - BUG
+        - RESTAURANT
+        - ACCOUNT
+        - OTHER
+      default: GENERAL
+    InquiryStatus:
+      type: string
+      enum:
+        - PENDING
+        - ANSWERED
+      default: PENDING
+  responses:
+    BadRequest / Validation:
+      description: ''
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResponseError'
+          examples:
+            기본1:
+              summary: 기본1
+              value:
+                success: false
+                code: BAD_REQUEST
+                message: 요청이 올바르지 않습니다.
+            기본2:
+              summary: 기본2
+              value:
+                success: false
+                code: VALIDATION
+                message: 요청 값이 올바르지 않습니다.
+    Internal:
+      description: ''
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResponseError'
+          examples:
+            기본:
+              summary: 기본
+              value:
+                success: false
+                code: INTERNAL
+                message: 알 수 없는 오류가 발생했습니다.
+    Unauthorized:
+      description: ''
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResponseError'
+          examples:
+            기본:
+              summary: 기본
+              value:
+                success: false
+                code: UNAUTHORIZED
+                message: 인증이 필요합니다.
+    NotFound:
+      description: ''
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResponseError'
+          examples:
+            기본:
+              summary: 기본
+              value:
+                success: false
+                code: NOT_FOUND
+                message: 대상을 찾을 수 없습니다.
+    TooManysRequestes:
+      description: ''
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResponseError'
+          examples:
+            기본:
+              summary: 기본
+              value:
+                success: false
+                code: TOO_MANY_REQUESTS
+                message: 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.
+    Conflict:
+      description: ''
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResponseError'
+          examples:
+            기본:
+              summary: 기본
+              value:
+                success: false
+                code: CONFLICT
+                message: 요청이 충돌했습니다.
+    Forbidden:
+      description: ''
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResponseError'
+          examples:
+            기본:
+              summary: 기본
+              value:
+                success: false
+                code: FORBIDDEN
+                message: 권한이 없습니다.
+    ExternalApi:
+      description: ''
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResponseError'
+          examples:
+            예시 1:
+              summary: 예시 1
+              value:
+                success: false
+                code: EXTERNAL_API
+                message: 알 수 없는 오류가 발생했습니다.
+  securitySchemes: {}
+servers: []
+security: []

@@ -40,9 +40,6 @@ function buildListFilter(req) {
     if (Object.values(INQUIRY_STATUS).includes(s)) filter.status = s;
   }
 
-  const q = query.q == null ? '' : String(query.q).trim();
-  if (q) filter.q = q;
-
   return filter;
 }
 
@@ -101,8 +98,8 @@ export function buildCreatePayload(req) {
   }
 
   if (files.length) {
-    const filePaths = [...new Set(files.map((f) => toFilePath(f)).filter(Boolean))];
-    if (filePaths.length) payload.filePaths = filePaths;
+    const imagePaths = [...new Set(files.map((f) => toFilePath(f)).filter(Boolean))];
+    if (imagePaths.length) payload.imagePaths = imagePaths;
   }
 
   return payload;
@@ -116,7 +113,7 @@ export function buildAnswerPayload(req) {
 
   /** @type {inquiry.AnswerPayload} */
   const payload = {
-    answer: requireString(body.answer, 'answer').trim(),
+    answer: requireString(body.answer, '답변').trim(),
   };
 
   return payload;

@@ -20,10 +20,10 @@ async function resolveFoodPath(foodCode) {
   try {
     const [rows] = await conn.execute(
       `
-            SELECT path FROM tag
-            WHERE type = 'food' AND code = :code
-            LIMIT 1
-        `,
+      SELECT path FROM tag
+      WHERE type = 'food' AND code = :code
+      LIMIT 1
+      `,
       { code: foodCode },
     );
     if (!rows?.length) {
@@ -58,10 +58,10 @@ async function resolveRegionPrefix(regionCode) {
   try {
     const [rows] = await conn.execute(
       `
-            SELECT depth FROM region
-            WHERE region_code=:code
-            LIMIT 1
-        `,
+      SELECT depth FROM region
+      WHERE region_code=:code
+      LIMIT 1
+      `,
       { code: regionCode },
     );
 
@@ -102,10 +102,10 @@ async function resolveFoodTagId(foodCode) {
   try {
     const [rows] = await conn.execute(
       `
-            SELECT tag_id AS tagId FROM tag
-            WHERE type = 'food' AND code = :code
-            LIMIT 1
-        `,
+      SELECT tag_id AS tagId FROM tag
+      WHERE type = 'food' AND code = :code
+      LIMIT 1
+      `,
       { code: foodCode },
     );
 
@@ -148,12 +148,12 @@ export async function readRestaurantList(filter, opt = {}) {
     join.push(`LEFT JOIN region rg2 ON rg2.region_code = r.region_code`);
     join.push(`LEFT JOIN region rg1 ON rg1.region_code = rg2.parent_code`);
     join.push(`
-        LEFT JOIN (
-            SELECT restaurant_id, COUNT(*) AS like_count
-            FROM restaurant_like
-            GROUP BY restaurant_id
-        ) rl ON rl.restaurant_id = r.restaurant_id
-        `);
+      LEFT JOIN (
+        SELECT restaurant_id, COUNT(*) AS like_count
+        FROM restaurant_like
+        GROUP BY restaurant_id
+      ) rl ON rl.restaurant_id = r.restaurant_id
+    `);
 
     if (foodPathPrefix) {
       where.push(`tf.type = 'food' AND tf.path LIKE :foodPathPrefix`);
@@ -168,10 +168,10 @@ export async function readRestaurantList(filter, opt = {}) {
     if (q) {
       // 이름, 주소, 대표메뉴, 분류
       where.push(`
-                (r.name LIKE :q
-                OR r.address LIKE :q
-                OR r.main_food LIKE :q
-                OR tf.name LIKE :q)`);
+        (r.name LIKE :q
+        OR r.address LIKE :q
+        OR r.main_food LIKE :q
+        OR tf.name LIKE :q)`);
       params.q = `%${q}%`;
     }
 
@@ -182,10 +182,10 @@ export async function readRestaurantList(filter, opt = {}) {
 
       join.push(`JOIN restaurant_tag rt_f ON rt_f.restaurant_id = r.restaurant_id`);
       join.push(`
-                JOIN tag t_f ON t_f.tag_id = rt_f.tag_id
-                AND t_f.type = 'tag'
-                AND t_f.code IN (${inList})
-            `);
+        JOIN tag t_f ON t_f.tag_id = rt_f.tag_id
+        AND t_f.type = 'tag'
+        AND t_f.code IN (${inList})
+      `);
 
       having.push(`COUNT(DISTINCT t_f.code) = :tagCount`);
       params.tagCount = tags.length;
@@ -194,13 +194,13 @@ export async function readRestaurantList(filter, opt = {}) {
     // 1) total
     const [countRows] = await conn.execute(
       `
-            SELECT COUNT(DISTINCT r.restaurant_id) AS total
-            FROM restaurant r
-            ${join.join('\n')}
-            WHERE ${where.join(' AND ')}
-            ${useTagFilter ? 'GROUP BY r.restaurant_id' : ''}
-            ${having.length ? `HAVING ${having.join(' AND ')}` : ''}
-        `,
+      SELECT COUNT(DISTINCT r.restaurant_id) AS total
+      FROM restaurant r
+      ${join.join('\n')}
+      WHERE ${where.join(' AND ')}
+      ${useTagFilter ? 'GROUP BY r.restaurant_id' : ''}
+      ${having.length ? `HAVING ${having.join(' AND ')}` : ''}
+    `,
       params,
     );
 
@@ -210,39 +210,39 @@ export async function readRestaurantList(filter, opt = {}) {
     // 2) items
     const [rows] = await conn.execute(
       `
-            SELECT
-                r.restaurant_id AS restaurantId,
-                r.name,
-                r.kakao_place_id AS kakaoPlaceId,
-                r.main_food AS mainFood,
-                r.address,
-                r.longitude,
-                r.latitude,
-                r.rating_sum AS ratingSum,
-                r.review_count AS reviewCount,
-                COALESCE(rl.like_count, 0) AS likeCount,
-                tf.name AS foodCategory,
-                r.region_code AS regionCode,
-                COALESCE(rg1.name, rg2.name) AS regionDepth1,
-                CASE WHEN rg1.name IS NOT NULL THEN rg2.name ELSE NULL END AS regionDepth2,
-                CASE
-                    WHEN r.review_count <= 0 THEN 0
-                    ELSE
-                        (r.review_count / (r.review_count + ${RATING_PRIOR_M})) * (r.rating_sum / r.review_count)
-                        + (${RATING_PRIOR_M} / (r.review_count + ${RATING_PRIOR_M})) * ${RATING_PRIOR_C}
-                END AS score
-            FROM restaurant r
-            ${join.join('\n')}
-            WHERE ${where.join(' AND ')}
-            ${useTagFilter ? 'GROUP BY r.restaurant_id' : ''}
-            ${having.length ? `HAVING ${having.join(' AND ')}` : ''}
-            ORDER BY
-                score DESC,
-                reviewCount DESC,
-                likeCount DESC,
-                restaurantId DESC
-            LIMIT :limit OFFSET :offset
-        `,
+      SELECT
+        r.restaurant_id AS restaurantId,
+        r.name,
+        r.kakao_place_id AS kakaoPlaceId,
+        r.main_food AS mainFood,
+        r.address,
+        r.longitude,
+        r.latitude,
+        r.rating_sum AS ratingSum,
+        r.review_count AS reviewCount,
+        COALESCE(rl.like_count, 0) AS likeCount,
+        tf.name AS foodCategory,
+        r.region_code AS regionCode,
+        COALESCE(rg1.name, rg2.name) AS regionDepth1,
+        CASE WHEN rg1.name IS NOT NULL THEN rg2.name ELSE NULL END AS regionDepth2,
+        CASE
+          WHEN r.review_count <= 0 THEN 0
+          ELSE
+          (r.review_count / (r.review_count + ${RATING_PRIOR_M})) * (r.rating_sum / r.review_count)
+          + (${RATING_PRIOR_M} / (r.review_count + ${RATING_PRIOR_M})) * ${RATING_PRIOR_C}
+        END AS score
+      FROM restaurant r
+      ${join.join('\n')}
+      WHERE ${where.join(' AND ')}
+      ${useTagFilter ? 'GROUP BY r.restaurant_id' : ''}
+      ${having.length ? `HAVING ${having.join(' AND ')}` : ''}
+      ORDER BY
+        score DESC,
+        reviewCount DESC,
+        likeCount DESC,
+        restaurantId DESC
+      LIMIT :limit OFFSET :offset
+      `,
       { ...params, limit, offset },
     );
 
@@ -279,21 +279,21 @@ export async function readRestaurantList(filter, opt = {}) {
 
     const [photoRows] = await conn.execute(
       `
-            SELECT restaurant_id AS restaurantId, file_path AS filePath
-            FROM (
-                SELECT
-                restaurant_id,
-                file_path,
-                ROW_NUMBER() OVER (
-                    PARTITION BY restaurant_id
-                    ORDER BY sort_order ASC, created_at DESC
-                ) rn
-                FROM restaurant_photo
-                WHERE photo_type='MAIN'
-                AND restaurant_id IN (${idPlaceholders})
-            ) x
-            WHERE rn = 1
-        `,
+      SELECT restaurant_id AS restaurantId, file_path AS filePath
+      FROM (
+        SELECT
+        restaurant_id,
+        file_path,
+        ROW_NUMBER() OVER (
+          PARTITION BY restaurant_id
+          ORDER BY sort_order ASC, created_at DESC
+        ) rn
+        FROM restaurant_photo
+        WHERE photo_type='MAIN'
+        AND restaurant_id IN (${idPlaceholders})
+      ) x
+      WHERE rn = 1
+      `,
       idParams,
     );
 
@@ -303,12 +303,12 @@ export async function readRestaurantList(filter, opt = {}) {
     // 4) tags
     const [tagRows] = await conn.execute(
       `
-            SELECT rt.restaurant_id AS restaurantId, t.name
-                FROM restaurant_tag rt
-                JOIN tag t ON t.tag_id = rt.tag_id
-            WHERE rt.restaurant_id IN (${idPlaceholders})
-                AND t.type='tag'
-        `,
+      SELECT rt.restaurant_id AS restaurantId, t.name
+        FROM restaurant_tag rt
+        JOIN tag t ON t.tag_id = rt.tag_id
+      WHERE rt.restaurant_id IN (${idPlaceholders})
+        AND t.type='tag'
+      `,
       idParams,
     );
 
@@ -323,7 +323,7 @@ export async function readRestaurantList(filter, opt = {}) {
     return { items, page, limit, total };
   } catch (err) {
     throw new AppError(ERR.DB, {
-      message: '레스토랑 목록 조회 중 오류가 발생했습니다.',
+      message: '음식점 목록 조회 중 오류가 발생했습니다.',
       data: { keys: ['filter', 'mode'], dbCode: err?.code, extra: { mode } },
       cause: err,
     });
@@ -346,41 +346,41 @@ export async function readRestaurant(restaurantId, opt = {}) {
     // 1) 기본
     const [rows] = await conn.execute(
       `
-            SELECT
-                r.restaurant_id AS restaurantId,
-                r.name,
-                r.kakao_place_id AS kakaoPlaceId,
-                r.main_food AS mainFood,
-                r.phone,
-                r.address,
-                r.longitude,
-                r.latitude,
-                r.rating_sum AS ratingSum,
-                r.review_count AS reviewCount,
-                r.is_published AS isPublishedInt,
-                r.region_code AS regionCode,
-                tf.name AS foodCategory,
-                COALESCE(rl.like_count, 0) AS likeCount,
-                COALESCE(rg1.name, rg2.name) AS regionDepth1,
-                CASE WHEN rg1.name IS NOT NULL THEN rg2.name ELSE NULL END AS regionDepth2
-            FROM restaurant r
-            LEFT JOIN tag tf ON tf.tag_id = r.food_tag_id
-            LEFT JOIN region rg2 ON rg2.region_code = r.region_code
-            LEFT JOIN region rg1 ON rg1.region_code = rg2.parent_code
-            LEFT JOIN (
-                SELECT restaurant_id, COUNT(*) AS like_count
-                FROM restaurant_like
-                GROUP BY restaurant_id
-            ) rl ON rl.restaurant_id = r.restaurant_id
-            WHERE r.restaurant_id = :restaurantId
-            LIMIT 1
-        `,
+      SELECT
+        r.restaurant_id AS restaurantId,
+        r.name,
+        r.kakao_place_id AS kakaoPlaceId,
+        r.main_food AS mainFood,
+        r.phone,
+        r.address,
+        r.longitude,
+        r.latitude,
+        r.rating_sum AS ratingSum,
+        r.review_count AS reviewCount,
+        r.is_published AS isPublishedInt,
+        r.region_code AS regionCode,
+        tf.name AS foodCategory,
+        COALESCE(rl.like_count, 0) AS likeCount,
+        COALESCE(rg1.name, rg2.name) AS regionDepth1,
+        CASE WHEN rg1.name IS NOT NULL THEN rg2.name ELSE NULL END AS regionDepth2
+      FROM restaurant r
+      LEFT JOIN tag tf ON tf.tag_id = r.food_tag_id
+      LEFT JOIN region rg2 ON rg2.region_code = r.region_code
+      LEFT JOIN region rg1 ON rg1.region_code = rg2.parent_code
+      LEFT JOIN (
+        SELECT restaurant_id, COUNT(*) AS like_count
+        FROM restaurant_like
+        GROUP BY restaurant_id
+      ) rl ON rl.restaurant_id = r.restaurant_id
+      WHERE r.restaurant_id = :restaurantId
+      LIMIT 1
+      `,
       { restaurantId },
     );
 
     const row = rows?.[0];
     if (!row || (!isAdmin && row.isPublishedInt !== 1))
-      throw new AppError(ERR.NOT_FOUND, { message: '해당 레스토랑을 찾을 수 없습니다.' });
+      throw new AppError(ERR.NOT_FOUND, { message: '해당 음식점을 찾을 수 없습니다.' });
 
     /** @type {restaurant.Detail} */
     const detail = {
@@ -414,13 +414,13 @@ export async function readRestaurant(restaurantId, opt = {}) {
     // 2) 태그 목록
     const [tagRows] = await conn.execute(
       `
-            SELECT t.name
-            FROM restaurant_tag rt
-            JOIN tag t ON t.tag_id = rt.tag_id
-            WHERE rt.restaurant_id = :restaurantId
-                AND t.type = 'tag'
-            ORDER BY t.click_count DESC, t.usage_count DESC
-        `,
+      SELECT t.name
+      FROM restaurant_tag rt
+      JOIN tag t ON t.tag_id = rt.tag_id
+      WHERE rt.restaurant_id = :restaurantId
+        AND t.type = 'tag'
+      ORDER BY t.click_count DESC, t.usage_count DESC
+      `,
       { restaurantId },
     );
     detail.tags = (tagRows ?? []).map((r) => r.name);
@@ -428,21 +428,21 @@ export async function readRestaurant(restaurantId, opt = {}) {
     // 3) 사진 그룹
     const [photoRows] = await conn.execute(
       `
-            SELECT
-                p.photo_type AS photoType,
-                p.file_path AS filePath,
-                p.caption,
-                p.created_at AS createdAt,
-                p.source_type AS sourceType,
-                u.nickname AS sourceUserNickname
-            FROM restaurant_photo p
-            LEFT JOIN user u ON u.user_id = p.source_user_id
-            WHERE p.restaurant_id = :restaurantId
-            ORDER BY
-                p.photo_type ASC,
-                p.sort_order ASC,
-                p.created_at DESC
-        `,
+      SELECT
+        p.photo_type AS photoType,
+        p.file_path AS filePath,
+        p.caption,
+        p.created_at AS createdAt,
+        p.source_type AS sourceType,
+        u.nickname AS sourceUserNickname
+      FROM restaurant_photo p
+      LEFT JOIN user u ON u.user_id = p.source_user_id
+      WHERE p.restaurant_id = :restaurantId
+      ORDER BY
+        p.photo_type ASC,
+        p.sort_order ASC,
+        p.created_at DESC
+      `,
       { restaurantId },
     );
 
@@ -463,19 +463,19 @@ export async function readRestaurant(restaurantId, opt = {}) {
     // 4) 방송 정보 + ott/youtube
     const [brRows] = await conn.execute(
       `
-            SELECT
-                br.broadcast_id AS broadcastId,
-                b.name AS broadcastName,
-                br.episode_no AS episodeNo,
-                be.aired_at AS airedAt
-            FROM broadcast_restaurant br
-            JOIN broadcast b ON b.broadcast_id = br.broadcast_id
-            LEFT JOIN broadcast_episode be
-                ON be.broadcast_id = br.broadcast_id
-            AND be.episode_no = br.episode_no
-            WHERE br.restaurant_id = :restaurantId
-            ORDER BY be.aired_at DESC, br.episode_no DESC
-        `,
+      SELECT
+        br.broadcast_id AS broadcastId,
+        b.name AS broadcastName,
+        br.episode_no AS episodeNo,
+        be.aired_at AS airedAt
+      FROM broadcast_restaurant br
+      JOIN broadcast b ON b.broadcast_id = br.broadcast_id
+      LEFT JOIN broadcast_episode be
+        ON be.broadcast_id = br.broadcast_id
+      AND be.episode_no = br.episode_no
+      WHERE br.restaurant_id = :restaurantId
+      ORDER BY be.aired_at DESC, br.episode_no DESC
+      `,
       { restaurantId },
     );
 
@@ -487,10 +487,10 @@ export async function readRestaurant(restaurantId, opt = {}) {
       // 4-1) OTT: broadcastId 기준으로 모으기
       const [ottRows] = await conn.execute(
         `
-                SELECT broadcast_id AS broadcastId, platform, ott_url AS ottUrl
-                FROM broadcast_ott
-                WHERE broadcast_id IN (${bidIn})
-            `,
+        SELECT broadcast_id AS broadcastId, platform, ott_url AS ottUrl
+        FROM broadcast_ott
+        WHERE broadcast_id IN (${bidIn})
+        `,
         bidParams,
       );
 
@@ -510,10 +510,10 @@ export async function readRestaurant(restaurantId, opt = {}) {
       // 4-2) YouTube: (broadcastId, episodeNo) 기준으로 모으기
       const [ytRows] = await conn.execute(
         `
-                SELECT broadcast_id AS broadcastId, episode_no AS episodeNo, youtube_url AS youtubeUrl
-                FROM broadcast_youtube
-                WHERE broadcast_id IN (${bidIn})
-            `,
+        SELECT broadcast_id AS broadcastId, episode_no AS episodeNo, youtube_url AS youtubeUrl
+        FROM broadcast_youtube
+        WHERE broadcast_id IN (${bidIn})
+        `,
         bidParams,
       );
 
@@ -539,7 +539,7 @@ export async function readRestaurant(restaurantId, opt = {}) {
   } catch (err) {
     if (err instanceof AppError) throw err;
     throw new AppError(ERR.DB, {
-      message: '레스토랑 상세 조회 중 오류가 발생했습니다.',
+      message: '음식점 상세 조회 중 오류가 발생했습니다.',
       data: { targetId: restaurantId, keys: ['restaurantId', 'mode'], dbCode: err?.code, extra: { mode } },
       cause: err,
     });
@@ -564,24 +564,24 @@ export async function createRestaurant(payload) {
 
     const [result] = await conn.execute(
       `
-            INSERT INTO restaurant (
-                name, kakao_place_id, region_code, food_tag_id,
-                main_food, phone, address, longitude, latitude,
-                is_published, data_status
-            )
-            VALUES (
-                :name, :kakaoPlaceId, :regionCode, :foodTagId,
-                :mainFood, :phone, :address, :longitude, :latitude,
-                :isPublished, :dataStatus
-            )
-        `,
+      INSERT INTO restaurant (
+        name, kakao_place_id, region_code, food_tag_id,
+        main_food, phone, address, longitude, latitude,
+        is_published, data_status
+      )
+      VALUES (
+        :name, :kakaoPlaceId, :regionCode, :foodTagId,
+        :mainFood, :phone, :address, :longitude, :latitude,
+        :isPublished, :dataStatus
+      )
+      `,
       params,
     );
 
     return Number(result.insertId);
   } catch (err) {
     throw new AppError(ERR.DB, {
-      message: '레스토랑 생성 중 오류가 발생했습니다.',
+      message: '음식점 생성 중 오류가 발생했습니다.',
       data: { keys: ['payload'], dbCode: err?.code },
       cause: err,
     });
@@ -624,16 +624,16 @@ export async function updateRestaurant(restaurantId, payload) {
 
     const [result] = await conn.execute(
       `
-            UPDATE restaurant
-               SET ${set.join(', ')}
-             WHERE restaurant_id = :restaurantId
-        `,
+      UPDATE restaurant
+        SET ${set.join(', ')}
+      WHERE restaurant_id = :restaurantId
+      `,
       patch,
     );
 
     if (!result.affectedRows)
       throw new AppError(ERR.NOT_FOUND, {
-        message: '레스토랑이 존재하지 않습니다.',
+        message: '음식점이 존재하지 않습니다.',
         data: { targetId: restaurantId },
       });
 
@@ -645,7 +645,7 @@ export async function updateRestaurant(restaurantId, payload) {
     if (err instanceof AppError) throw err;
 
     throw new AppError(ERR.DB, {
-      message: '레스토랑 수정 중 오류가 발생했습니다.',
+      message: '음식점 수정 중 오류가 발생했습니다.',
       data: { targetId: restaurantId, dbCode: err?.code },
       cause: err,
     });
@@ -678,7 +678,7 @@ export async function deleteRestaurant(restaurantId) {
     if (err instanceof AppError) throw err;
 
     throw new AppError(ERR.DB, {
-      message: '레스토랑 삭제 중 오류가 발생했습니다.',
+      message: '음식점 삭제 중 오류가 발생했습니다.',
       data: { targetId: restaurantId, dbCode: err?.code },
       cause: err,
     });

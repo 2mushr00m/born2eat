@@ -66,57 +66,46 @@ export function makeUploader(opt) {
 }
 
 export const uploaders = {
-  // upload/profiles/{user_id}-{ts}.{ext}
+  // upload/profiles/{userId}-{ts}-{rand}.{ext}
   profile: makeUploader({
     subdir: 'profiles',
     limits: { fileSize: LIMITS.fileSize, files: 1 },
     filter: imageOnlyFilter,
     filename: (req, file, ext) => {
-      const userId = idFrom(req, ['user.user_id', 'user.id', 'params.id', 'body.user_id']);
+      const userId = idFrom(req, ['user.userId']);
       return `${userId}-${Date.now()}-${rand8()}${ext}`;
     },
   }).single('profile'),
 
-  // upload/reviews/{review_id}-{rand}.{ext}
+  // upload/reviews/{userId}-{ts}-{rand}.{ext}
   review: makeUploader({
     subdir: 'reviews',
     limits: { fileSize: LIMITS.fileSize, files: LIMITS.reviewPhotos },
     filter: imageOnlyFilter,
     filename: (req, file, ext) => {
-      const reviewId = idFrom(req, ['params.review_id', 'params.id', 'body.review_id', 'body.id']);
-      return `${reviewId}-${rand8()}${ext}`;
+      const userId = idFrom(req, ['user.userId']);
+      return `${userId}-${Date.now()}-${rand8()}${ext}`;
     },
   }).array('photos'),
 
-  // upload/inquiries/{inquiry_id}-{rand}.{ext}
+  // upload/inquiries/{userId}-{ts}-{rand}.{ext}
   inquiry: makeUploader({
     subdir: 'inquiries',
     limits: { fileSize: LIMITS.fileSize, files: LIMITS.inquiryPhotos },
     filter: imageOnlyFilter,
     filename: (req, file, ext) => {
-      const inquiryId = idFrom(req, [
-        'params.id',
-        'params.inquiry_id',
-        'params.inquiryId',
-        'body.inquiry_id',
-        'body.id',
-      ]);
-      return `${inquiryId}-${rand8()}${ext}`;
+      const userId = idFrom(req, ['user.userId']);
+      return `${userId}-${Date.now()}-${rand8()}${ext}`;
     },
-  }).array('photos'),
+  }).array('images'),
 
-  // upload/restaurants/{restaurant_id}-{ts}-{rand}.{ext}
+  // upload/restaurants/{restaurantId}-{ts}-{rand}.{ext}
   restaurant: makeUploader({
     subdir: 'restaurants',
     limits: { fileSize: LIMITS.fileSize },
     filter: imageOnlyFilter,
     filename: (req, file, ext) => {
-      const restaurantId = idFrom(req, [
-        'params.id',
-        'params.restaurant_id',
-        'params.restaurantId',
-        'body.restaurant_id',
-      ]);
+      const restaurantId = idFrom(req, ['params.restaurantId', 'body.restaurantId']);
       const field = String(file?.fieldname ?? 'photo');
       return `${restaurantId}-${field}-${Date.now()}-${rand8()}${ext}`;
     },

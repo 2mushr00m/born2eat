@@ -1,5 +1,6 @@
 // common/check.js
 import { AppError, ERR } from './error.js';
+import { eunNeun, iGa } from './josa.js';
 import logger from './logger.js';
 
 /** 필수 문자열 검사
@@ -10,19 +11,19 @@ import logger from './logger.js';
 export function requireString(value, field) {
   if (value == null)
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값이 누락되었습니다.`,
+      message: `${iGa(field)} 누락되었습니다.`,
       data: { keys: [field] },
     });
   if (typeof value !== 'string')
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값은 문자열이어야 합니다.`,
+      message: `${field} 형식이 올바르지 않습니다.`,
       data: { keys: [field], extra: { valueType: typeof value } },
     });
 
   const trimmed = value.trim();
   if (!trimmed)
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값은 비어 있을 수 없습니다.`,
+      message: `${eunNeun(field)} 비울 수 없습니다.`,
       data: { keys: [field] },
     });
   return trimmed;
@@ -36,25 +37,25 @@ export function requireString(value, field) {
 export function requireStringNoTrim(value, field) {
   if (value == null)
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값이 누락되었습니다.`,
+      message: `${iGa(field)} 누락되었습니다.`,
       data: { keys: [field] },
     });
   if (typeof value !== 'string')
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값은 문자열이어야 합니다.`,
+      message: `${field} 형식이 올바르지 않습니다.`,
       data: { keys: [field], extra: { valueType: typeof value } },
     });
 
   if (value.length === 0)
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값은 비어 있을 수 없습니다.`,
+      message: `${eunNeun(field)} 비울 수 없습니다.`,
       data: { keys: [field] },
     });
 
   // 공백만으로 구성된 문자열 거부
   if (!value.replace(/\s/g, '').length)
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값은 공백만으로 구성될 수 없습니다.`,
+      message: `${eunNeun(field)} 공백만으로 설정할 수 없습니다.`,
       data: { keys: [field] },
     });
 
@@ -83,7 +84,7 @@ export function parseNumber(
   if (value === undefined || value === null || value === '') {
     if (nullable) return null;
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값이 비어 있습니다.`,
+      message: `${iGa(field)} 누락되었습니다.`,
       data: { keys: [field] },
     });
   }
@@ -92,7 +93,7 @@ export function parseNumber(
   let n = Number(value);
   if (!Number.isFinite(n)) {
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값이 Number 형식이 아닙니다.`,
+      message: `${field} 형식이 올바르지 않습니다.`,
       data: { keys: [field], extra: { value } },
     });
   }
@@ -109,7 +110,7 @@ export function parseNumber(
       n = converted;
     } else {
       throw new AppError(ERR.VALIDATION, {
-        message: `${field} 값은 정수여야 합니다.`,
+        message: `${eunNeun(field)} 정수여야 합니다.`,
         data: { keys: [field], extra: { value } },
       });
     }
@@ -127,7 +128,7 @@ export function parseNumber(
       n = converted;
     } else {
       throw new AppError(ERR.VALIDATION, {
-        message: `${field} 값은 0보다 커야 합니다.`,
+        message: `${iGa(field)} 지정된 범위 밖입니다.`,
         data: { keys: [field], extra: { value: n } },
       });
     }
@@ -145,7 +146,7 @@ export function parseNumber(
       n = converted;
     } else {
       throw new AppError(ERR.VALIDATION, {
-        message: `${field} 값은 ${min} 이상이어야 합니다.`,
+        message: `${iGa(field)} 지정된 범위 밖입니다.`,
         data: { keys: [field], extra: { value: n, min } },
       });
     }
@@ -161,7 +162,7 @@ export function parseNumber(
       n = converted;
     } else {
       throw new AppError(ERR.VALIDATION, {
-        message: `${field} 값은 ${max} 이하여야 합니다.`,
+        message: `${iGa(field)} 지정된 범위 밖입니다.`,
         data: { keys: [field], extra: { value: n, max } },
       });
     }
@@ -190,7 +191,7 @@ export function parseBoolean(raw, field, opt = {}) {
   if (raw == null) {
     if (nullable) return null;
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값이 누락되었습니다.`,
+      message: `${field} 값이 비어 있습니다.`,
       data: { keys: [field] },
     });
   }
@@ -202,7 +203,7 @@ export function parseBoolean(raw, field, opt = {}) {
     if (raw === 1) return true;
     if (nullable) return null;
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값의 형식이 올바르지 않습니다.`,
+      message: `${field} 값이 올바르지 않습니다.`,
       data: { keys: [field], extra: { value: raw } },
     });
   }
@@ -211,7 +212,7 @@ export function parseBoolean(raw, field, opt = {}) {
   if (s === '') {
     if (nullable) return null;
     throw new AppError(ERR.VALIDATION, {
-      message: `${field} 값이 누락되었습니다.`,
+      message: `${iGa(field)} 누락되었습니다.`,
       data: { keys: [field] },
     });
   }
@@ -220,7 +221,7 @@ export function parseBoolean(raw, field, opt = {}) {
   if (['false', '0', 'no', 'n', 'off'].includes(s)) return false;
 
   throw new AppError(ERR.VALIDATION, {
-    message: `${field} 값의 형식이 올바르지 않습니다.`,
+    message: `${field} 형식이 올바르지 않습니다.`,
     data: { keys: [field], extra: { value: raw } },
   });
 }

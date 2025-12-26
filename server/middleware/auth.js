@@ -15,18 +15,18 @@ export async function sessionUser(req, res, next) {
   try {
     const [rows] = await conn.execute(
       `
-            SELECT
-                user_id AS userId,
-                email,
-                nickname,
-                profile_url AS profileUrl,
-                role,
-                status,
-                suspended_until AS suspendedUntil
-            FROM user
-            WHERE user_id = :userId
-            LIMIT 1
-        `,
+      SELECT
+        user_id AS userId,
+        email,
+        nickname,
+        profile_url AS profileUrl,
+        role,
+        status,
+        suspended_until AS suspendedUntil
+      FROM user
+      WHERE user_id = :userId
+      LIMIT 1
+      `,
       { userId },
     );
 
@@ -53,10 +53,10 @@ export async function sessionUser(req, res, next) {
       const status = USER_STATUS.ACTIVE;
       await conn.execute(
         `
-                UPDATE user
-                    SET status = :status, suspended_until = NULL
-                WHERE user_id = :userId
-            `,
+        UPDATE user
+          SET status = :status, suspended_until = NULL
+        WHERE user_id = :userId
+        `,
         { userId, status },
       );
 

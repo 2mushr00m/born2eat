@@ -46,7 +46,7 @@ export const adminRead = wrap(async (req, res) => {
 export const adminCreate = wrap(async (req, res) => {
   const payload = buildCreatePayload(req);
   const restaurantId = await createRestaurant(payload);
-  created(res, { restaurantId });
+  created(res, { id: restaurantId });
 });
 
 /** PATCH /admin/restaurants/:restaurantId */
@@ -54,14 +54,14 @@ export const adminUpdate = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
   const payload = buildUpdatePayload(req);
   await updateRestaurant(restaurantId, payload);
-  ok(res, { restaurantId });
+  ok(res, { id: restaurantId });
 });
 
 /** DELETE /admin/restaurants/:restaurantId */
 export const adminDestroy = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
   await deleteRestaurant(restaurantId);
-  ok(res, { restaurantId });
+  ok(res);
 });
 
 /* ============== TODO/Stub ============== */
@@ -69,23 +69,23 @@ export const adminDestroy = wrap(async (req, res) => {
 /** PUT /restaurants/:restaurantId/tags */
 export const putTags = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
-  ok(res, { restaurantId });
+  ok(res);
 });
 
 /** DELETE /restaurants/:restaurantId/tags/:tagCode */
 export const deleteTag = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
-  ok(res, { restaurantId });
+  ok(res);
 });
 
 /** PATCH /restaurants/:restaurantId/photos */
 export const patchPhotos = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
-  ok(res, { restaurantId });
+  ok(res);
 });
 
 /** PATCH /restaurants/:restaurantId/broadcasts */
 export const patchBroadcasts = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
-  ok(res, { restaurantId });
+  ok(res);
 });

@@ -6,6 +6,6 @@ import { sessionUser } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.post('/', uploaders.inquiry, inquiryController.create);
+router.post('/', sessionUser, uploaders.inquiry, inquiryController.create);
 
 export default router;

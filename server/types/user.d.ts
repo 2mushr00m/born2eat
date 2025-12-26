@@ -5,18 +5,24 @@ declare global {
   namespace user {
     // ======= Controller → Service ==========
     type UpdatePayload = {
-      email?: string;
       nickname?: string;
       phone?: string;
       profileUrl?: string | null;
+    };
+    type AdminUpdatePayload = UpdatePayload & {
+      email?: string;
       status?: UserStatus;
       suspendedUntil?: Date | null;
+    };
+    type PasswordPayload = {
+      currentPassword: string;
+      newPassword: string;
     };
 
     // ========== Service → Controller =======
 
     // GET /users/:userId
-    type Basic = {
+    type Item = {
       userId: number;
       email: string;
       nickname: string;

@@ -28,7 +28,7 @@ export const create = wrap(async (req, res) => {
   const userId = req.user?.userId ?? null;
   const payload = buildCreatePayload(req);
   const reviewId = await createReview(userId, restaurantId, payload);
-  created(res, { reviewId });
+  created(res, { id: reviewId });
 });
 
 /** PATCH /reviews/:reviewsId */
@@ -37,7 +37,7 @@ export const update = wrap(async (req, res) => {
   const userId = req.user?.userId ?? null;
   const payload = buildUpdatePayload(req);
   await updateReview(reviewId, userId, payload);
-  ok(res, { reviewId });
+  ok(res, { id: reviewId });
 });
 
 /** DELETE /reviews/:reviewsId */
@@ -45,7 +45,7 @@ export const destroy = wrap(async (req, res) => {
   const reviewId = parseId(req.params?.reviewId);
   const userId = req.user?.userId ?? null;
   await deleteReview(reviewId, userId);
-  ok(res, { reviewId });
+  ok(res);
 });
 
 /** GET /me/reviews */
@@ -71,5 +71,5 @@ export const adminHide = wrap(async (req, res) => {
   const reviewId = parseId(req.params?.reviewId);
   const actorId = req.user?.userId ?? null;
   await hideReview(reviewId, { actorId });
-  ok(res, { reviewId });
+  ok(res);
 });

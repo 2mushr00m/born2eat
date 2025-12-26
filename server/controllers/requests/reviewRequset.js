@@ -7,6 +7,20 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
 
+function parseTags(raw) {
+  if (raw == null) return undefined;
+  const arr = Array.isArray(raw) ? raw : [raw];
+  const tags = [
+    ...new Set(
+      arr
+        .flatMap((v) => String(v).split(','))
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ),
+  ];
+  return tags.length ? tags : undefined;
+}
+
 /** 목록 조회 filter
  * @param {Request} req
  * @returns {review.ListFilter} */
@@ -99,39 +113,38 @@ export function buildAdminListFilter(req) {
 export function buildCreatePayload(req) {
   const body = req?.body ?? {};
 
-  const rating = parseNumber(body.rating, 'rating', {
+  const rating = parseNumber(body.rating, '별점', {
     positive: true,
     nullable: false,
     autoFix: true,
-    min: 0.5,
+    min: 1,
     max: 5,
   });
 
   /** @type {review.CreatePayload} */
   const payload = {
     rating,
-    content: requireString(body.content, 'content').trim(),
+    content: requireString(body.content, '리뷰 내용').trim(),
   };
 
-  // 이 부분 수정 필요 애초에 tags: string(tagCode)[] 이런 식으로 전달됨.
-  // tags: string[]
-  if (body.tags != null) {
-    const tags = Array.isArray(body.tags) ? body.tags : String(body.tags).split(',');
-    const cleaned = [...new Set(tags.map((t) => String(t).trim()).filter(Boolean))];
-    if (cleaned.length) payload.tags = cleaned;
-  }
+  const tags = parseTags(body.tags);
+  if (tags) payload.tags = tags;
 
-  // 이 부분도 체크해볼 것
-  // photos: { filepath, caption? }[]
-  if (body.photos != null) {
-    const arr = Array.isArray(body.photos) ? body.photos : [body.photos];
+  // req.files 기준으로 filepath 생성 + captions 메타 매칭
+  // 프론트 권장:
+  // - files: File[] (fieldname=photos)
+  // - body.captions: string[] (fieldname=captions)  // photos와 같은 순서
+  const files = Array.isArray(req.files) ? req.files : [];
+  if (files.length) {
+    const captions = body.captions == null ? [] : [].concat(body.captions);
     const photos = [];
-    for (const p of arr) {
-      if (!p) continue;
-      const filepath = String(p.filepath ?? '').trim();
+
+    for (let i = 0; i < files.length; i++) {
+      const filepath = toFilePath(files[i]);
       if (!filepath) continue;
-      const caption = p.caption == null ? undefined : String(p.caption).trim();
-      photos.push({ filepath, caption: caption || undefined });
+
+      const cap = captions[i] != null ? String(captions[i]).trim() : '';
+      photos.push({ filepath, caption: cap || undefined });
     }
     if (photos.length) payload.photos = photos;
   }
@@ -149,11 +162,11 @@ export function buildUpdatePayload(req) {
   const payload = {};
 
   if (body.rating != null) {
-    const rating = parseNumber(body.rating, 'rating', {
+    const rating = parseNumber(body.rating, '별점', {
       positive: true,
       nullable: true,
       autoFix: true,
-      min: 0.5,
+      min: 1,
       max: 5,
     });
     if (rating != null) payload.rating = rating;
@@ -164,18 +177,11 @@ export function buildUpdatePayload(req) {
     if (content) payload.content = content;
   }
 
-  // 이 부분도 체크해볼 것
-  // tags: string[] (추후 단건 추가/삭제까지 확장 가능한 형태로 유지)
   if (body.tags != null) {
-    const tags = Array.isArray(body.tags) ? body.tags : String(body.tags).split(',');
-    const cleaned = [...new Set(tags.map((t) => String(t).trim()).filter(Boolean))];
-    payload.tags = cleaned;
+    payload.tags = parseTags(body.tags) ?? [];
   }
 
-  // 이 부분도 체크해볼 것
-  // photos: { id, path, caption }[]
-  // - path: string | null (null이면 삭제 의도 가능)
-  // - caption: string | null
+  // 기존의 수정 및 삭제는 number과 caption을 포함한 json
   if (body.photos != null) {
     const arr = Array.isArray(body.photos) ? body.photos : [body.photos];
     const photos = [];

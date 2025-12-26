@@ -10,10 +10,9 @@ const router = express.Router();
 router.get('/', meController.read);
 router.patch('/', uploaders.profile, meController.update);
 router.delete('/', meController.destroy);
-
 router.patch('/password', meController.password);
+
 router.get('/inquiries', inquiryController.myList);
-router.get('/inquiries/:inquiryId', inquiryController.myRead);
 router.get('/reviews', reviewController.myList);
 // router.get('/likes', meController.likes);
 

@@ -68,7 +68,7 @@ export function buildCreatePayload(req) {
 
   /** @type {restaurant.CreatePayload} */
   const payload = {
-    name: requireString(body.name, 'name').trim(),
+    name: requireString(body.name, '가게명').trim(),
   };
 
   for (const k of ['kakaoPlaceId', 'regionCode', 'foodTagCode', 'mainFood', 'phone', 'address']) {
@@ -102,7 +102,7 @@ export function buildUpdatePayload(req) {
   /** @type {restaurant.UpdatePayload} */
   const payload = {};
 
-  if ('name' in body) payload.name = requireString(body.name, 'name').trim();
+  if ('name' in body) payload.name = requireString(body.name, '가게명').trim();
 
   for (const k of ['kakaoPlaceId', 'regionCode', 'foodTagCode', 'mainFood', 'phone', 'address']) {
     if (k in body) {

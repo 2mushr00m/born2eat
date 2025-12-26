@@ -7,8 +7,8 @@
     "server:start": "npm --prefix server run start",
     "server:format": "npm --prefix server run format",
 
-    "app:install": "npm --prefix app install",
-    "app:dev": "npm --prefix app run dev",
-    "app:build": "npm --prefix app run build"
+    "front:install": "npm --prefix front install",
+    "front:dev": "npm --prefix front run dev",
+    "front:build": "npm --prefix front run build"
   }
 }

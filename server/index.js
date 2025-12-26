@@ -5,15 +5,13 @@ import 'dotenv/config';
 
 // 2) 외부 라이브러리
 import express from 'express';
-import helmet from 'helmet';
+import session from 'express-session';
 import compression from 'compression';
+import helmet from 'helmet';
 import cors from 'cors';
+import YAML from 'yaml';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import session from 'express-session';
-import YAML from 'yaml';
-import swaggerUi from 'swagger-ui-express';
-import fs from 'fs';
 
 // 3) 내부 공용 모듈
 import logger from './common/logger.js';
@@ -32,7 +30,12 @@ import inquiryRouter from './routes/inquiryRouter.js';
 import crawlerRouter from './routes/crawlerRouter.js';
 import tagRouter from './routes/tagRouter.js';
 
-const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+];
 
 const app = express();
 app.set('trust proxy', true); // HTTP → HTTPS
@@ -79,28 +82,25 @@ app.use(
   }),
 );
 
-// 7) Swagger
+// 7) 정적 파일
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const openapiPath = path.join(__dirname, 'docs', 'openapi.bundle.yml');
-const openapiText = fs.readFileSync(openapiPath, 'utf8');
-const openapiSpec = YAML.parse(openapiText);
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
-app.get('/openapi.json', (req, res) => res.json(openapiSpec));
-
-// 8) 정적 파일
 app.use('/upload', express.static(path.join(__dirname, 'upload')));
 
-// 9) 라우터 연결
+// 8) 라우터 연결
 app.use('/tags', tagRouter);
 app.use('/restaurants', sessionUser, restaurantRouter);
 app.use('/reviews', sessionUser, requireAuth, reviewRouter);
-app.use('/inquiries', sessionUser, inquiryRouter);
+app.use('/inquiries', inquiryRouter);
 app.use('/users', userRouter);
 app.use('/auth', authRouter);
 app.use('/me', sessionUser, requireAuth, meRouter);
 app.use('/admin', sessionUser, requireAuth, requireAdmin, adminRouter);
 app.use('/crawler', crawlerRouter); // 추후 admin 라우터 밑으로 옮길 예정
+
+// 9) Swagger
+import { mountDocs } from './docs/mountDocs.js';
+mountDocs(app);
 
 // 10) 404 처리 미들웨어
 app.use((req, res, next) => {

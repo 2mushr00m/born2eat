@@ -48,8 +48,8 @@ nvm use 22.21.0
 ### 2) 의존성 설치
 
 ```text
-# (프론트 준비 후) npm app:install
-npm server:install
+# (프론트 준비 중) npm run front:install
+npm run server:install
 ```
 
 ### 3) 환경변수 설정

@@ -3,27 +3,27 @@ import db from '../repository/db.js';
 import { AppError, ERR } from '../common/error.js';
 import { USER_STATUS } from '../common/constants.js';
 
-/** 내부 헬퍼: 회원정보 조회 (Basic)
+/** 내부 헬퍼: 회원정보 조회 (Item)
  * @param {import('mysql2/promise').PoolConnection} conn
  * @param {number} userId
- * @returns {Promise<user.Basic>}
+ * @returns {Promise<user.Item>}
  */
-async function selectUserBasic(conn, userId) {
+async function selectUser(conn, userId) {
   const [rows] = await conn.execute(
     `
-        SELECT
-            user_id AS userId,
-            email,
-            nickname,
-            profile_url AS profileUrl,
-            role,
-            status,
-            suspended_until AS suspendedUntil
-        FROM user
-        WHERE user_id = :userId
-        AND status <> 'DELETED'
-        LIMIT 1
-        `,
+    SELECT
+      user_id AS userId,
+      email,
+      nickname,
+      profile_url AS profileUrl,
+      role,
+      status,
+      suspended_until AS suspendedUntil
+    FROM user
+    WHERE user_id = :userId
+    AND status <> 'DELETED'
+    LIMIT 1
+    `,
     { userId },
   );
 
@@ -37,16 +37,16 @@ async function selectUserBasic(conn, userId) {
   return user;
 }
 
-/** 회원정보 조회 (Basic)
+/** 회원정보 조회
  * @param {number} userId
  * @param {{ mode?: 'ME' | 'ADMIN' }} [opt]
- * @returns {Promise<user.Basic>}
+ * @returns {Promise<user.Item>}
  */
-export async function readUserBasic(userId, opt) {
+export async function readUser(userId, opt) {
   const { mode = 'ME' } = opt || {};
   const conn = await db.getConnection();
   try {
-    return await selectUserBasic(conn, userId);
+    return await selectUser(conn, userId);
   } catch (err) {
     if (err instanceof AppError) throw err;
     throw new AppError(ERR.DB, {
@@ -63,7 +63,7 @@ export async function readUserBasic(userId, opt) {
  * @param {number} userId
  * @param {Partial<user.UpdatePayload>} payload
  * @param {{ mode?: 'ME' | 'ADMIN' }} [opt]
- * @returns {Promise<user.Basic>}
+ * @returns {Promise<user.Item>}
  */
 export async function updateUser(userId, payload, opt) {
   const { mode = 'ME' } = opt || {};
@@ -114,15 +114,15 @@ export async function updateUser(userId, payload, opt) {
     if (set.length)
       await conn.execute(
         `
-                UPDATE user
-                    SET ${set.join(', ')}
-                WHERE user_id = :userId
-                AND status <> 'DELETED'
-            `,
+        UPDATE user
+          SET ${set.join(', ')}
+        WHERE user_id = :userId
+        AND status <> 'DELETED'
+        `,
         patch,
       );
 
-    return await selectUserBasic(conn, userId);
+    return await selectUser(conn, userId);
   } catch (err) {
     if (e?.code === 'ER_DUP_ENTRY') {
       if ('nickname' in patch)
@@ -156,6 +156,16 @@ export async function updateUser(userId, payload, opt) {
   }
 }
 
+/** 비밀번호 변경
+ * @param {number} userId
+ * @param {user.PasswordPayload} payload
+ * @returns {Promise<void>}
+ */
+export async function changePassword(userId, paylaod) {
+  await bcrypt.hash(paylaod.currentPassword);
+  const passwordHash = await bcrypt.hash(password, 10);
+}
+
 /** 회원 탈퇴
  * @param {number} userId
  * @returns {Promise<void>}
@@ -183,9 +193,9 @@ export async function deleteUser(userId) {
 
     await conn.execute(
       `
-            UPDATE user SET status = 'DELETED', deleted_at = NOW()
-            WHERE user_id = :userId AND status <> 'DELETED'
-        `,
+      UPDATE user SET status = 'DELETED', deleted_at = NOW()
+      WHERE user_id = :userId AND status <> 'DELETED'
+      `,
       { userId },
     );
     await conn.commit();

@@ -17,7 +17,7 @@ function generateNickname() {
 /** 회원가입
  * @param {Request} req
  * @param {auth.SignupPayload} payload
- * @returns {Promise<user.Basic>}
+ * @returns {Promise<user.Item>}
  */
 export async function signup(req, payload) {
   const { email, password, phone = null } = payload;
@@ -25,11 +25,7 @@ export async function signup(req, payload) {
 
   try {
     // 1) 중복 이메일 체크
-    const [dup] = await conn.execute(
-      `
-            SELECT user_id as userId FROM user WHERE email = :email LIMIT 1`,
-      { email },
-    );
+    const [dup] = await conn.execute(`SELECT user_id as userId FROM user WHERE email = :email LIMIT 1`, { email });
     if (dup?.[0])
       throw new AppError(ERR.CONFLICT, {
         message: '이미 사용 중인 이메일입니다.',
@@ -45,7 +41,7 @@ export async function signup(req, payload) {
       try {
         const [ins] = await conn.execute(
           `INSERT INTO user (email, password_hash, nickname, phone)
-                    VALUES (:email, :passwordHash, :nickname, :phone)`,
+            VALUES (:email, :passwordHash, :nickname, :phone)`,
           { email, passwordHash, nickname: cand, phone },
         );
 
@@ -85,7 +81,7 @@ export async function signup(req, payload) {
 /** 로그인
  * @param {Request} req
  * @param {auth.LoginPayload} payload
- * @returns {Promise<user.Basic>}
+ * @returns {Promise<user.Item>}
  */
 export async function login(req, payload) {
   const { email, password } = payload;
@@ -93,20 +89,18 @@ export async function login(req, payload) {
 
   try {
     const [rows] = await conn.execute(
-      `
-            SELECT
-                user_id AS userId,
-                email,
-                password_hash AS passwordHash,
-                status,
-                role,
-                nickname,
-                profile_url AS profileUrl,
-                suspended_until AS suspendedUntil
-            FROM user
-            WHERE email = :email
-            LIMIT 1
-        `,
+      `SELECT
+        user_id AS userId,
+        email,
+        password_hash AS passwordHash,
+        status,
+        role,
+        nickname,
+        profile_url AS profileUrl,
+        suspended_until AS suspendedUntil
+      FROM user
+      WHERE email = :email
+      LIMIT 1`,
       { email },
     );
 
@@ -158,7 +152,19 @@ export async function login(req, payload) {
  * @returns {Promise<void>}
  */
 export async function logout(req) {
-  await new Promise((resolve) => {
-    req.session.destroy(() => resolve());
+  if (!req || !req.session) return;
+
+  await new Promise((resolve, reject) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return reject(
+          new AppError(ERR.INTERNAL_ERROR, {
+            message: '로그아웃 처리 중 오류가 발생했습니다.',
+            cause: err,
+          }),
+        );
+      }
+      resolve();
+    });
   });
 }

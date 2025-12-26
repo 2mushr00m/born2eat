@@ -6,15 +6,15 @@
   "type": "module",
   "scripts": {
     "format": "prettier --cache --write .",
-    "openapi:bundle": "redocly bundle docs/openapi/openapi.yml -o docs/openapi.bundle.yml",
-    "start": "node index.js",
-    "dev": "npm run openapi:bundle && node index.js"
+    "dev": "npm run nodemon index.js",
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.13.2",
+    "bcrypt": "^6.0.0",
     "cheerio": "^1.1.2",
     "compression": "^1.8.1",
     "cors": "^2.8.5",

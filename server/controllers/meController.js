@@ -1,15 +1,15 @@
 // controllers/meController.js
 import { wrap, ok, created } from '../common/http.js';
-import { parseId } from '../common/check.js';
-import { buildUpdatePayload } from './requests/meRequest.js';
-import { deleteUser, updateUser } from '../services/userService.js';
+import { parseId, requireString } from '../common/check.js';
+import { buildUpdatePayload, buildPasswordPayload } from './requests/userRequest.js';
+import { changePassword, deleteUser, readUser, updateUser } from '../services/userService.js';
 
 /* ============== USER ============== */
 
 /** GET /me */
 export const read = wrap(async (req, res) => {
   const userId = req.user?.userId ?? null;
-  const result = {};
+  const result = await readUser(userId, { mode: 'ME' });
   ok(res, result);
 });
 
@@ -32,7 +32,7 @@ export const destroy = wrap(async (req, res) => {
 /** PATCH /me/password */
 export const password = wrap(async (req, res) => {
   const userId = req.user?.userId ?? null;
-  {
-  }
-  ok(res, { userId });
+  const payload = buildPasswordPayload(req);
+  const result = await changePassword(password);
+  ok(res, result);
 });
