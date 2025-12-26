@@ -1,5 +1,6 @@
 // controllers/requests/reviewRequest.js
 import { requireString, parseNumber, parseBoolean } from '../../common/check.js';
+import { toFilePath } from '../../middleware/upload.js';
 
 /** @typedef {import('express').Request} Request */
 
@@ -130,10 +131,6 @@ export function buildCreatePayload(req) {
   const tags = parseTags(body.tags);
   if (tags) payload.tags = tags;
 
-  // req.files 기준으로 filepath 생성 + captions 메타 매칭
-  // 프론트 권장:
-  // - files: File[] (fieldname=photos)
-  // - body.captions: string[] (fieldname=captions)  // photos와 같은 순서
   const files = Array.isArray(req.files) ? req.files : [];
   if (files.length) {
     const captions = body.captions == null ? [] : [].concat(body.captions);
