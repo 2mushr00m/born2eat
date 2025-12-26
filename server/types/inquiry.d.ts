@@ -6,6 +6,7 @@ declare global {
     // ======= Controller → Service ==========
     type ListFilter = {
       status?: InquiryStatus;
+      type?: InquiryType;
       userId?: number;
       q?: string;
       page: number;

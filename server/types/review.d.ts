@@ -7,6 +7,7 @@ declare global {
     type ListFilter = {
       restaurantId?: number;
       userId?: number;
+      sort?: string;
       isVisible?: boolean;
       q?: string;
       page: number;
@@ -37,11 +38,6 @@ declare global {
     };
 
     // ========== Service → Controller =======
-    type Tag = {
-      id: number;
-      name: string;
-    };
-
     type Photo = {
       id: number;
       path: string;
@@ -64,7 +60,11 @@ declare global {
       likeCount: number;
       viewerLiked: boolean;
 
-      tags: Tag[];
+      tags: {
+        id: number;
+        code: string;
+        name: string;
+      }[];
       photos: Photo[];
     };
 

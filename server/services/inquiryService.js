@@ -84,7 +84,7 @@ export async function createInquiry(userId, payload) {
  * @returns {Promise<inquiry.List | inquiry.AdminList>}
  */
 export async function readInquiryList(filter, opt) {
-  const { limit, page, q, status, userId } = filter;
+  const { limit, page, q, status, type, userId } = filter;
   const { mode = 'ME' } = opt || {};
   const isAdmin = mode === 'ADMIN';
 
@@ -107,6 +107,11 @@ export async function readInquiryList(filter, opt) {
     if (status != null) {
       where.push('i.status = :status');
       params.status = status;
+    }
+
+    if (type != null) {
+      where.push('i.type = :type');
+      params.type = type;
     }
 
     if (q) {

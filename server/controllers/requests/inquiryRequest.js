@@ -32,16 +32,13 @@ function buildListFilter(req) {
       max: MAX_LIMIT,
     }) ?? DEFAULT_LIMIT;
 
-  /** @type {inquiry.ListFilter} */
-  const filter = { page, limit };
-
   if (query.status != null) {
     const s = String(query.status).trim();
     if (Object.values(INQUIRY_STATUS).includes(s)) filter.status = s;
   }
 
-  const q = query.q == null ? '' : String(query.q).trim();
-  if (q) filter.q = q;
+  /** @type {inquiry.ListFilter} */
+  const filter = { page, limit };
 
   return filter;
 }
@@ -52,6 +49,14 @@ function buildListFilter(req) {
 export function buildAdminListFilter(req) {
   const filter = buildListFilter(req);
   const query = req.query || {};
+
+  if (query.type != null) {
+    const s = String(query.type).trim();
+    if (Object.values(INQUIRY_TYPE).includes(s)) filter.type = s;
+  }
+
+  const q = query.q == null ? '' : String(query.q).trim();
+  if (q) filter.q = q;
 
   if (query.userId != null)
     filter.userId = parseNumber(query.userId, 'userId', {

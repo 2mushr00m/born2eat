@@ -97,6 +97,7 @@ declare global {
 
       tags: string[]; // 태그 목록 (분위기/상황/추가 food 태그 등)
       region: Region;
+      viewrLiked: boolean;
     };
 
     // GET /restaurants

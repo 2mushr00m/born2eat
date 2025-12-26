@@ -12,3 +12,5 @@ export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'BANNED' | 'DELETED';
 export type UserRole = 'ADMIN' | 'USER';
 
 export type TagType = 'food' | 'tag';
+
+export type ReivewSort = 'least' | 'like';
