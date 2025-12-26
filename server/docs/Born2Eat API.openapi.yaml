@@ -579,146 +579,6 @@ paths:
           $ref: '#/components/responses/Internal'
           description: ''
       security: []
-  /me/inquiries:
-    get:
-      summary: 내 문의 목록
-      deprecated: false
-      description: ''
-      tags:
-        - Me
-      parameters:
-        - name: born2eat.sid
-          in: cookie
-          description: 환경에 따라 계정 변경
-          example: '{{born2eat.sid}}'
-          schema:
-            type: string
-            default: '{{born2eat.sid}}'
-        - name: q
-          in: query
-          description: ''
-          required: false
-          schema:
-            type: string
-        - name: status
-          in: query
-          description: ''
-          required: false
-          schema:
-            type: string
-            enum:
-              - PENDING
-              - ANSWERED
-        - name: page
-          in: query
-          description: ''
-          required: false
-          schema:
-            type: integer
-        - name: limit
-          in: query
-          description: ''
-          required: false
-          schema:
-            type: integer
-        - name: Set-Cookie
-          in: header
-          description: ''
-          example: '{{Set-Cookie}}'
-          schema:
-            type: string
-            default: '{{Set-Cookie}}'
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ResponseSuccess'
-                  - type: object
-                    properties:
-                      result: {}
-                    required:
-                      - result
-              example:
-                success: true
-                result:
-                  items:
-                    - inquiryId: 12
-                      userId: 1
-                      userNickname: TEST
-                      title: 계정 관련 문의
-                      type: ACCOUNT
-                      status: PENDING
-                      createdAt: '2025-12-24T12:11:44.000Z'
-                      answeredAt: null
-                    - inquiryId: 8
-                      userId: 1
-                      userNickname: TEST
-                      title: 기본 문의
-                      type: GENERAL
-                      status: PENDING
-                      createdAt: '2025-12-24T11:36:40.000Z'
-                      answeredAt: null
-                    - inquiryId: 7
-                      userId: 1
-                      userNickname: TEST
-                      title: 로그인된 사용자 확인
-                      type: ACCOUNT
-                      status: PENDING
-                      createdAt: '2025-12-24T11:32:34.000Z'
-                      answeredAt: null
-                  page: 1
-                  limit: 10
-                  total: 3
-          headers: {}
-        '500':
-          $ref: '#/components/responses/Internal'
-          description: ''
-      security: []
-  /me/reviews:
-    get:
-      summary: 내 리뷰 목록
-      deprecated: false
-      description: ''
-      tags:
-        - Me
-      parameters:
-        - name: born2eat.sid
-          in: cookie
-          description: 환경에 따라 계정 변경
-          example: '{{born2eat.sid}}'
-          schema:
-            type: string
-            default: '{{born2eat.sid}}'
-        - name: Set-Cookie
-          in: header
-          description: ''
-          example: '{{Set-Cookie}}'
-          schema:
-            type: string
-            default: '{{Set-Cookie}}'
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ResponseSuccess'
-                  - type: object
-                    properties:
-                      result:
-                        type: object
-                        properties: {}
-                    required:
-                      - result
-          headers: {}
-        '500':
-          $ref: '#/components/responses/Internal'
-          description: ''
-      security: []
   /me/password:
     patch:
       summary: 비밀번호 변경
@@ -783,6 +643,144 @@ paths:
                 required:
                   - result
                   - success
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /me/inquiries:
+    get:
+      summary: 내 문의 목록
+      deprecated: false
+      description: ''
+      tags:
+        - Me
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: status
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: string
+            enum:
+              - PENDING
+              - ANSWERED
+        - name: page
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: integer
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/InquiryList'
+                    required:
+                      - result
+              example:
+                success: true
+                result:
+                  items:
+                    - inquiryId: 12
+                      title: 계정 관련 문의
+                      content: 이메일을 바꾸고 싶습니다.
+                      type: ACCOUNT
+                      status: PENDING
+                      answer: null
+                      createdAt: '2025-12-24T12:11:44.000Z'
+                      answeredAt: null
+                      imagePaths: []
+                    - inquiryId: 8
+                      title: 기본 문의
+                      content: 이러한 문제가 발생했습니다. 해결 부탁드립니다.
+                      type: GENERAL
+                      status: PENDING
+                      answer: null
+                      createdAt: '2025-12-24T11:36:40.000Z'
+                      answeredAt: null
+                      imagePaths: []
+                    - inquiryId: 7
+                      title: 로그인된 사용자 확인
+                      content: 이메일 변경 요청합니다.
+                      type: ACCOUNT
+                      status: PENDING
+                      answer: null
+                      createdAt: '2025-12-24T11:32:34.000Z'
+                      answeredAt: null
+                      imagePaths: []
+                  page: 1
+                  limit: 10
+                  total: 3
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /me/reviews:
+    get:
+      summary: 내 리뷰 목록
+      deprecated: false
+      description: ''
+      tags:
+        - Me
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties: {}
+                    required:
+                      - result
           headers: {}
         '500':
           $ref: '#/components/responses/Internal'
@@ -1273,7 +1271,12 @@ paths:
     get:
       summary: 문의 상세보기
       deprecated: false
-      description: ''
+      description: >-
+        - `GET /admin/inquiries/{id}`의 `result`는 `GET /admin/inquiries`의
+        `items[]` 요소와 동일한 스키마이며, 목록 응답만으로도 상세 화면을 구성할 수 있습니다.
+
+        - [내 문의: 첨부 이미지 필요, 관리자 목록: 불필요, 관리자 상세: 필요]와 구조라, 스키마 분리로 인한 관리 복잡도를
+        줄이기 위해 동일 스키마로 설계했습니다.
       tags:
         - Admin
       parameters:
@@ -1686,91 +1689,35 @@ paths:
 webhooks: {}
 components:
   schemas:
-    List:
-      type: object
-      properties:
-        limit:
-          type: integer
-          description: 한 페이지당 개수
-        page:
-          type: integer
-          description: 페이지
-        total:
-          type: integer
-          description: 총 개수
-      required:
-        - limit
-        - page
-        - total
-    ResponseSuccess:
-      type: object
-      properties:
-        success:
-          type: boolean
-          default: true
-          description: 성공 여부
-      required:
-        - success
-    ResponseError:
-      type: object
-      properties:
-        success:
-          type: boolean
-          examples:
-            - false
-          default: false
-          description: 성공 여부
-        code:
-          type: string
-          description: 에러 코드
-        message:
-          type: string
-          description: 에러 메시지
-      required:
-        - success
-        - code
-        - message
-    InquiryAdminItem:
-      allOf:
-        - $ref: '#/components/schemas/InquiryItem'
-        - type: object
-          properties:
-            userId:
-              type:
-                - integer
-                - 'null'
-              description: 문의자 FK
-            userNickname:
-              type:
-                - string
-                - 'null'
-              description: 문의자 닉네임
-            answeredByUserId:
-              type:
-                - integer
-                - 'null'
-              description: 답변자 FK
-            answeredByUserNickname:
-              type:
-                - string
-                - 'null'
-              description: 답변자 닉네임
-          required:
-            - userId
-            - userNickname
-            - answeredByUserId
-            - answeredByUserNickname
-    InquiryAdminList:
-      allOf:
-        - $ref: '#/components/schemas/List'
-        - type: object
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/InquiryAdminItem'
-          required:
-            - items
+    UserRole:
+      type: string
+      enum:
+        - ADMIN
+        - USER
+      default: USER
+    UserStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - SUSPENDED
+        - BANNED
+        - DELETED
+      default: ACTIVE
+    InquiryType:
+      type: string
+      enum:
+        - GENERAL
+        - BUG
+        - RESTAURANT
+        - ACCOUNT
+        - OTHER
+      default: GENERAL
+    InquiryStatus:
+      type: string
+      enum:
+        - PENDING
+        - ANSWERED
+      default: PENDING
     InquiryItem:
       type: object
       properties:
@@ -1820,14 +1767,58 @@ components:
         - content
         - answer
         - imagePaths
-    Id:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: 대상 PK
-      required:
-        - id
+    InquiryList:
+      allOf:
+        - $ref: '#/components/schemas/List'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/InquiryItem'
+          required:
+            - items
+    InquiryAdminItem:
+      allOf:
+        - $ref: '#/components/schemas/InquiryItem'
+        - type: object
+          properties:
+            userId:
+              type:
+                - integer
+                - 'null'
+              description: 문의자 FK
+            userNickname:
+              type:
+                - string
+                - 'null'
+              description: 문의자 닉네임
+            answeredByUserId:
+              type:
+                - integer
+                - 'null'
+              description: 답변자 FK
+            answeredByUserNickname:
+              type:
+                - string
+                - 'null'
+              description: 답변자 닉네임
+          required:
+            - userId
+            - userNickname
+            - answeredByUserId
+            - answeredByUserNickname
+    InquiryAdminList:
+      allOf:
+        - $ref: '#/components/schemas/List'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/InquiryAdminItem'
+          required:
+            - items
     UserItem:
       type: object
       properties:
@@ -1865,35 +1856,58 @@ components:
         - role
         - status
         - suspendedUntil
-    UserRole:
-      type: string
-      enum:
-        - ADMIN
-        - USER
-      default: USER
-    UserStatus:
-      type: string
-      enum:
-        - ACTIVE
-        - SUSPENDED
-        - BANNED
-        - DELETED
-      default: ACTIVE
-    InquiryType:
-      type: string
-      enum:
-        - GENERAL
-        - BUG
-        - RESTAURANT
-        - ACCOUNT
-        - OTHER
-      default: GENERAL
-    InquiryStatus:
-      type: string
-      enum:
-        - PENDING
-        - ANSWERED
-      default: PENDING
+    Id:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 대상 PK
+      required:
+        - id
+    List:
+      type: object
+      properties:
+        limit:
+          type: integer
+          description: 한 페이지당 개수
+        page:
+          type: integer
+          description: 페이지
+        total:
+          type: integer
+          description: 총 개수
+      required:
+        - limit
+        - page
+        - total
+    ResponseSuccess:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: true
+          description: 성공 여부
+      required:
+        - success
+    ResponseError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          examples:
+            - false
+          default: false
+          description: 성공 여부
+        code:
+          type: string
+          description: 에러 코드
+        message:
+          type: string
+          description: 에러 메시지
+      required:
+        - success
+        - code
+        - message
   responses:
     BadRequest / Validation:
       description: ''

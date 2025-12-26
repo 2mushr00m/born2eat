@@ -40,6 +40,9 @@ function buildListFilter(req) {
     if (Object.values(INQUIRY_STATUS).includes(s)) filter.status = s;
   }
 
+  const q = query.q == null ? '' : String(query.q).trim();
+  if (q) filter.q = q;
+
   return filter;
 }
 
