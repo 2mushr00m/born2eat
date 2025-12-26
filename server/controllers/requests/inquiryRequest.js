@@ -1,6 +1,6 @@
 // controllers/requests/inquiryRequest.js
 import { requireString, parseNumber } from '../../common/check.js';
-import { INQUIRY_TYPE } from '../../common/constants.js';
+import { INQUIRY_SEARCH_TARGET, INQUIRY_TYPE } from '../../common/constants.js';
 import { toFilePath } from '../../middleware/upload.js';
 
 /** @typedef {import('express').Request} Request */
@@ -56,7 +56,13 @@ export function buildAdminListFilter(req) {
   }
 
   const q = query.q == null ? '' : String(query.q).trim();
-  if (q) filter.q = q;
+  if (q) {
+    filter.q = q;
+
+    const st = query.searchTarget == null ? '' : String(query.searchTarget).trim();
+    if (st && Object.values(INQUIRY_SEARCH_TARGET).includes(st)) filter.searchTarget = st;
+    else filter.searchTarget = INQUIRY_SEARCH_TARGET.ALL;
+  }
 
   if (query.userId != null)
     filter.userId = parseNumber(query.userId, 'userId', {

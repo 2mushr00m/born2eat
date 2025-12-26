@@ -786,7 +786,7 @@ paths:
           $ref: '#/components/responses/Internal'
           description: ''
       security: []
-  /restaurants:
+  /restaurants/:
     get:
       summary: 음식점 목록
       deprecated: false
@@ -847,7 +847,7 @@ paths:
           in: path
           description: ''
           required: true
-          example: ''
+          example: '1'
           schema:
             type: string
         - name: Set-Cookie
@@ -1180,33 +1180,65 @@ paths:
           schema:
             type: string
             default: '{{born2eat.sid}}'
+        - name: limit
+          in: query
+          description: 한 페이지당 제한
+          required: false
+          example: 0
+          schema:
+            type: integer
+        - name: page
+          in: query
+          description: 페이지
+          required: false
+          example: 0
+          schema:
+            type: integer
+        - name: userId
+          in: query
+          description: 특정 사용자
+          required: false
+          example: 0
+          schema:
+            type: integer
+        - name: type
+          in: query
+          description: 문의 유형 [전체보기 / 일반 / ...] 필터
+          required: false
+          schema:
+            type: string
+            enum:
+              - GENERAL
+              - BUG
+              - RESTAURANT
+              - ACCOUNT
+              - OTHER
         - name: status
           in: query
-          description: ''
+          description: 답변 여부 [미답변 / 답변 완료] 필터
           required: false
+          example: ''
           schema:
             type: string
             enum:
               - PENDING
               - ANSWERED
-        - name: userId
+        - name: q
           in: query
-          description: ''
+          description: 검색
           required: false
           schema:
-            type: integer
-        - name: limit
+            type: string
+        - name: searchTarget
           in: query
-          description: ''
+          description: 검색 범위
           required: false
           schema:
-            type: integer
-        - name: page
-          in: query
-          description: ''
-          required: false
-          schema:
-            type: integer
+            type: string
+            enum:
+              - ALL
+              - TITLE
+              - CONTENT
         - name: Set-Cookie
           in: header
           description: ''

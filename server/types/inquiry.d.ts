@@ -1,16 +1,19 @@
 // types/inquiry.d.ts
-import type { InquiryStatus, InquiryType } from './enum';
+import type { InquirySearchTarget, InquiryStatus, InquiryType } from './enum';
 
 declare global {
   namespace inquiry {
     // ======= Controller → Service ==========
     type ListFilter = {
-      status?: InquiryStatus;
-      type?: InquiryType;
-      userId?: number;
-      q?: string;
       page: number;
       limit: number;
+
+      userId?: number;
+      status?: InquiryStatus;
+      type?: InquiryType;
+
+      q?: string;
+      searchTarget?: InquirySearchTarget;
     };
 
     type CreatePayload = {

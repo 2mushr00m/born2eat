@@ -34,6 +34,11 @@ export const INQUIRY_STATUS = /** @type {const} */ ({
   PENDING: 'PENDING',
   ANSWERED: 'ANSWERED',
 });
+export const INQUIRY_SEARCH_TARGET = /** @type {const} */ ({
+  ALL: 'ALL',
+  TITLE: 'TITLE',
+  CONTENT: 'CONTENT',
+});
 
 export const USER_STATUS = /** @type {const} */ ({
   ACTIVE: 'ACTIVE',

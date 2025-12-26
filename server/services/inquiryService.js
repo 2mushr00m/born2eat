@@ -1,7 +1,7 @@
 // services/inquiryService.js
 import db from '../repository/db.js';
 import { AppError, ERR } from '../common/error.js';
-import { INQUIRY_STATUS } from '../common/constants.js';
+import { INQUIRY_SEARCH_TARGET, INQUIRY_STATUS } from '../common/constants.js';
 
 /** @typedef {import('express').Request} Request */
 
@@ -115,8 +115,20 @@ export async function readInquiryList(filter, opt) {
     }
 
     if (q) {
-      where.push('i.title LIKE :q');
-      params.q = `%${q}%`;
+      const like = `%${q}%`;
+      const st = filter.searchTarget || INQUIRY_SEARCH_TARGET.ALL;
+
+      if (st === INQUIRY_SEARCH_TARGET.TITLE) {
+        where.push('i.title LIKE :qTitle');
+        params.qTitle = like;
+      } else if (st === INQUIRY_SEARCH_TARGET.CONTENT) {
+        where.push('i.content LIKE :qContent');
+        params.qContent = like;
+      } else {
+        where.push('(i.title LIKE :qTitle OR i.content LIKE :qContent)');
+        params.qTitle = like;
+        params.qContent = like;
+      }
     }
 
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';

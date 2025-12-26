@@ -1,17 +1,23 @@
 // types/review.d.ts
 
+import { ReivewSort } from './enum';
+
 declare global {
   namespace review {
     // ======= Controller → Service ==========
 
     type ListFilter = {
-      restaurantId?: number;
-      userId?: number;
-      sort?: string;
-      isVisible?: boolean;
-      q?: string;
       page: number;
       limit: number;
+
+      restaurantId?: number;
+      userId?: number;
+
+      sort?: ReivewSort;
+      isVisible?: boolean;
+
+      q?: string;
+      searchTarget?: string;
     };
 
     type CreatePayload = {
