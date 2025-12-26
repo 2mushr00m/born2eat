@@ -1,5 +1,5 @@
 // controllers/requests/userRequest.js
-import { requireString } from '../../common/check.js';
+import { requireString, requireStringNoTrim } from '../../common/check.js';
 import { toFilePath } from '../../middleware/upload.js';
 
 /** @typedef {import('express').Request} Request */
@@ -56,8 +56,8 @@ export function buildAdminUpdatePayload(req) {
 export function buildPasswordPayload(req) {
   const body = req?.body ?? {};
 
-  const currentPassword = requireStringNoTrim(body.currentPassword, 'currentPassword');
-  const newPassword = requireStringNoTrim(body.newPassword, 'newPassword');
+  const currentPassword = requireStringNoTrim(body.currentPassword, '현재 비밀번호');
+  const newPassword = requireStringNoTrim(body.newPassword, '새 비밀번호');
 
   if (currentPassword === newPassword)
     throw new AppError(ERR.BAD_REQUEST, {

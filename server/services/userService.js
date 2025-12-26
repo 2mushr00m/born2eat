@@ -1,4 +1,5 @@
 // services/userService.js
+import bcrypt from 'bcrypt';
 import db from '../repository/db.js';
 import { AppError, ERR } from '../common/error.js';
 import { USER_STATUS } from '../common/constants.js';
@@ -161,9 +162,68 @@ export async function updateUser(userId, payload, opt) {
  * @param {user.PasswordPayload} payload
  * @returns {Promise<void>}
  */
-export async function changePassword(userId, paylaod) {
-  await bcrypt.hash(paylaod.currentPassword);
-  const passwordHash = await bcrypt.hash(password, 10);
+export async function changePassword(userId, payload) {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [rows] = await conn.execute(
+      `
+      SELECT user_id AS userId, status, password_hash AS passwordHash
+      FROM user
+      WHERE user_id = :userId
+        AND status <> 'DELETED'
+      LIMIT 1
+      FOR UPDATE
+      `,
+      { userId },
+    );
+
+    const user = rows?.[0];
+    if (!user)
+      throw new AppError(ERR.NOT_FOUND, {
+        message: '해당 계정이 존재하지 않습니다.',
+        data: { targetId: userId },
+      });
+
+    if (user.status !== USER_STATUS.ACTIVE && user.status !== USER_STATUS.SUSPENDED)
+      throw new AppError(ERR.FORBIDDEN, {
+        message: '현재 계정 상태에서는 비밀번호를 변경할 수 없습니다.',
+        data: { targetId: userId, extra: { status: user.status } },
+      });
+
+    const ok = await bcrypt.compare(payload.currentPassword, user.passwordHash);
+    if (!ok)
+      throw new AppError(ERR.CONFLICT, {
+        message: '현재 비밀번호가 일치하지 않습니다.',
+        data: { targetId: userId, keys: ['currentPassword'] },
+      });
+
+    const passwordHash = await bcrypt.hash(payload.newPassword, 10);
+
+    await conn.execute(
+      `
+      UPDATE user
+        SET password_hash = :passwordHash
+      WHERE user_id = :userId
+        AND status <> 'DELETED'
+      `,
+      { userId, passwordHash },
+    );
+
+    await conn.commit();
+  } catch (err) {
+    try {
+      await conn.rollback();
+    } catch (_) {}
+    if (err instanceof AppError) throw err;
+    throw new AppError(ERR.DB, {
+      message: '비밀번호 변경 중 오류가 발생했습니다.',
+      data: { targetId: userId, keys: ['currentPassword', 'newPassword'], dbCode: err?.code },
+      cause: err,
+    });
+  } finally {
+    conn.release?.();
+  }
 }
 
 /** 회원 탈퇴

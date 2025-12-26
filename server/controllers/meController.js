@@ -3,6 +3,7 @@ import { wrap, ok, created } from '../common/http.js';
 import { parseId, requireString } from '../common/check.js';
 import { buildUpdatePayload, buildPasswordPayload } from './requests/userRequest.js';
 import { changePassword, deleteUser, readUser, updateUser } from '../services/userService.js';
+import logger from '../common/logger.js';
 
 /* ============== USER ============== */
 
@@ -33,6 +34,6 @@ export const destroy = wrap(async (req, res) => {
 export const password = wrap(async (req, res) => {
   const userId = req.user?.userId ?? null;
   const payload = buildPasswordPayload(req);
-  const result = await changePassword(password);
-  ok(res, result);
+  await changePassword(userId, payload);
+  ok(res, { id: userId });
 });

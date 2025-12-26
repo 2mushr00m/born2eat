@@ -3,9 +3,6 @@ info:
   title: Born2Eat API
   description: Born2Eat 백엔드 API 문서입니다.
   version: 1.0.0
-servers:
-  - url: http://localhost:8080
-    description: Local
 tags:
   - name: Auth
   - name: Inquiries
@@ -717,6 +714,75 @@ paths:
                         properties: {}
                     required:
                       - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /me/password:
+    patch:
+      summary: 비밀번호 변경
+      deprecated: false
+      description: ''
+      tags:
+        - Me
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPassword:
+                  type: string
+                  description: 현재 비밀번호
+                newPassword:
+                  type: string
+                  description: 새 비밀번호
+              required:
+                - currentPassword
+                - newPassword
+            example:
+              currentPassword: test
+              newPassword: test-new
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    default: true
+                    description: 성공 여부
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: 대상 PK
+                    required:
+                      - id
+                required:
+                  - result
+                  - success
           headers: {}
         '500':
           $ref: '#/components/responses/Internal'
