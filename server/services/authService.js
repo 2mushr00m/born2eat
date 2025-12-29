@@ -158,7 +158,7 @@ export async function logout(req) {
     req.session.destroy((err) => {
       if (err) {
         return reject(
-          new AppError(ERR.INTERNAL_ERROR, {
+          new AppError(ERR.INTERNAL, {
             message: '로그아웃 처리 중 오류가 발생했습니다.',
             cause: err,
           }),

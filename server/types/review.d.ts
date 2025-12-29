@@ -38,9 +38,9 @@ declare global {
         caption?: string | null;
       }[];
       photosUpload?: {
-        targetId?: number | null;
+        id?: number | null;
         filepath: string;
-        cpation?: string;
+        caption?: string;
       }[];
     };
 

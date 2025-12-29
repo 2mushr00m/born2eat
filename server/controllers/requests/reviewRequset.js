@@ -107,7 +107,7 @@ export function buildAdminListFilter(req) {
 
   if (query.isVisible != null) {
     const v = parseBoolean(query.isVisible, 'isVisible', { nullable: true });
-    if (v != null) filter.userId = v;
+    if (v != null) filter.isVisible = v;
   }
 
   const q = query.q == null ? '' : String(query.q).trim();
@@ -172,10 +172,10 @@ export function buildUpdatePayload(req) {
   /** @type {review.UpdatePayload} */
   const payload = {};
 
+  // 1) rating
   if (body.rating != null) {
     const rating = parseNumber(body.rating, '별점', {
       positive: true,
-      nullable: true,
       autoFix: true,
       min: 1,
       max: 5,
@@ -183,22 +183,41 @@ export function buildUpdatePayload(req) {
     if (rating != null) payload.rating = rating;
   }
 
+  // 2) content
   if (body.content != null) {
-    const content = String(body.content).trim();
+    const content = requireString(body.content);
     if (content) payload.content = content;
   }
 
+  // 3) tags (들어오면 교체 취급)
   if (body.tags != null) {
     payload.tags = parseTags(body.tags) ?? [];
   }
 
-  // 기존의 수정 및 삭제는 number과 caption을 포함한 json
-  if (body.photos != null) {
-    const arr = Array.isArray(body.photos) ? body.photos : [body.photos];
-    const photos = [];
+  const asArray = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
+  const parseMaybeJson = (v) => {
+    if (v == null) return undefined;
+    if (typeof v !== 'string') return v;
+    const s = v.trim();
+    if (!s) return undefined;
+    try {
+      return JSON.parse(s);
+    } catch {
+      return v; // JSON이 아니면 원문 유지
+      // 에러 던져버릴까. photosPatch가 Json 양식 아니라고.
+    }
+  };
+
+  // 4) photosPatch: 기존 사진 수정/삭제 (json)
+  if (body.photosPatch != null) {
+    const raw = parseMaybeJson(body.photosPatch);
+    const arr = asArray(raw);
+
+    const patches = [];
     for (const p of arr) {
       if (!p) continue;
-      const id = parseNumber(p.id, 'photos.id', {
+
+      const id = parseNumber(p.id, '수정 사진 PK', {
         integer: true,
         positive: true,
         nullable: true,
@@ -206,16 +225,77 @@ export function buildUpdatePayload(req) {
       });
       if (id == null) continue;
 
-      const path = p.path === null ? null : p.path == null ? null : String(p.path).trim();
-      const caption = p.caption === null ? null : p.caption == null ? null : String(p.caption).trim();
+      const del = p.delete === true;
 
-      photos.push({
-        id,
-        path: path === '' ? null : path,
-        caption: caption === '' ? null : caption,
-      });
+      // caption: undefined(미전달)=변경 없음 / null=캡션 제거 / string=설정
+      let caption = undefined;
+      if (Object.prototype.hasOwnProperty.call(p, 'caption')) {
+        if (p.caption === null) caption = null;
+        else if (p.caption == null) caption = undefined;
+        else {
+          const s = String(p.caption).trim();
+          caption = s === '' ? '' : s; // 빈문자 허용 여부는 서비스에서 결정 가능
+        }
+      }
+
+      /** @type {{ id: number, delete?: true, caption?: (string|null) }} */
+      const item = { id };
+      if (del) item.delete = true;
+      if (!del && Object.prototype.hasOwnProperty.call(p, 'caption')) item.caption = caption;
+
+      patches.push(item);
     }
-    payload.photos = photos;
+    if (patches.length) payload.photosPatch = patches;
+    else payload.photosPatch = [];
+  }
+
+  // 5) photosUpload: 새 파일 업로드 (multipart files)
+  // body.ids / body.captions 를 req.files(photos)와 "인덱스 매칭"
+  const files = Array.isArray(req.files) ? req.files : [];
+  if (files.length) {
+    const idsRaw = body.ids;
+    const captionsRaw = body.captions;
+
+    const ids = asArray(parseMaybeJson(idsRaw));
+    const captions = asArray(parseMaybeJson(captionsRaw));
+
+    const uploads = [];
+    for (let i = 0; i < files.length; i++) {
+      const filepath = toFilePath(files[i]);
+      if (!filepath) continue;
+
+      // id: number | null | undefined
+      let id = undefined;
+      if (ids[i] === null) id = null;
+      else if (ids[i] != null) {
+        const v = parseNumber(ids[i], '교체 사진 PK', {
+          integer: true,
+          positive: true,
+          nullable: true,
+          autoFix: true,
+        });
+        if (v != null) id = v;
+        else if (ids[i] === '' || String(ids[i]).trim() === '') id = null;
+      }
+
+      const item = { filepath };
+      if (id !== undefined) item.id = id;
+
+      if (i < captions.length && Object.prototype.hasOwnProperty.call(captions, i)) {
+        const raw = captions[i];
+
+        if (raw === null) {
+          item.caption = null;
+        } else if (raw == null) {
+          // undefined: 키 없음(변경 없음) → 아무 것도 안 넣음
+        } else {
+          item.caption = String(raw);
+        }
+      }
+      uploads.push(item);
+    }
+
+    if (uploads.length) payload.photosUpload = uploads;
   }
 
   return payload;

@@ -1,6 +1,7 @@
 // controllers/requests/inquiryRequest.js
 import { requireString, parseNumber } from '../../common/check.js';
-import { INQUIRY_SEARCH_TARGET, INQUIRY_TYPE } from '../../common/constants.js';
+import { INQUIRY_SEARCH_TARGET, INQUIRY_TYPE, INQUIRY_STATUS } from '../../common/constants.js';
+import { AppError, ERR } from '../../common/error.js';
 import { toFilePath } from '../../middleware/upload.js';
 
 /** @typedef {import('express').Request} Request */

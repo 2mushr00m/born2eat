@@ -78,7 +78,7 @@ export const adminList = wrap(async (req, res) => {
   ok(res, result);
 });
 
-/** DELETE /admin/reviews */
+/** DELETE /admin/reviews/:reviewsId */
 export const adminHide = wrap(async (req, res) => {
   const reviewId = parseId(req.params?.reviewId);
   const actorId = req.user?.userId ?? null;
