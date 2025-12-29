@@ -16,6 +16,17 @@ export const RESTAURANT_PHOTO_SOURCE = /** @type {const} */ ({
   CRAWLER: 'CRAWLER',
 });
 
+export const REVIEW_SORT = /** @type {const} */ ({
+  RECENT: 'recent',
+  LIKE: 'like',
+  RATING: 'rating',
+});
+export const REVIEW_SEARCH_TARGET = /** @type {const} */ ({
+  CONTENT: 'CONTENT',
+  RESTAURANT: 'RESTAURANT',
+  USER: 'USER',
+});
+
 export const BROADCAST_OTT = /** @type {const} */ ({
   NETFLIX: 'NETFLIX',
   TVING: 'TVING',

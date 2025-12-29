@@ -1,6 +1,6 @@
 // types/review.d.ts
 
-import { ReivewSort } from './enum';
+import { ReviewSearchTarget, ReviewSort } from './enum';
 
 declare global {
   namespace review {
@@ -9,15 +9,16 @@ declare global {
     type ListFilter = {
       page: number;
       limit: number;
+      sort: ReviewSort;
 
+      // Admin: 필터 (특정 음식점/유저/숨김 여부)
       restaurantId?: number;
       userId?: number;
-
-      sort?: ReivewSort;
       isVisible?: boolean;
 
+      // Admin: 검색
       q?: string;
-      searchTarget?: string;
+      searchTarget?: ReviewSearchTarget;
     };
 
     type CreatePayload = {
@@ -36,7 +37,7 @@ declare global {
         delete?: true;
         caption?: string | null;
       }[];
-      photoUpload?: {
+      photosUpload?: {
         targetId?: number | null;
         filepath: string;
         cpation?: string;
@@ -44,11 +45,6 @@ declare global {
     };
 
     // ========== Service → Controller =======
-    type Photo = {
-      id: number;
-      path: string;
-      caption: string | null;
-    };
 
     type Item = {
       reviewId: number;
@@ -58,20 +54,27 @@ declare global {
 
       rating: number;
       content: string;
-
-      createdAt: Date;
-      updatedAt: Date;
       isVisible: boolean;
 
-      likeCount: number;
-      viewerLiked: boolean;
+      createdAt: Date;
+      updatedAt: Date | null;
 
-      tags: {
+      likeCount: number;
+
+      // Detail
+      tags?: {
         id: number;
         code: string;
         name: string;
       }[];
-      photos: Photo[];
+      photos?: {
+        id: number;
+        path: string;
+        caption: string | null;
+      }[];
+
+      // viewerLiked (Admin)
+      viewerLiked?: boolean;
     };
 
     type List = {

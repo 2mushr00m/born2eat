@@ -1,5 +1,6 @@
 // controllers/requests/reviewRequest.js
-import { requireString, parseNumber, parseBoolean } from '../../common/check.js';
+import { requireString, parseNumber, parseId, parseBoolean } from '../../common/check.js';
+import { REVIEW_SEARCH_TARGET, REVIEW_SORT } from '../../common/constants.js';
 import { toFilePath } from '../../middleware/upload.js';
 
 /** @typedef {import('express').Request} Request */
@@ -47,6 +48,13 @@ function buildListFilter(req) {
 
   /** @type {review.ListFilter} */
   const filter = { page, limit };
+
+  if (query.sort != null) {
+    const s = String(query.sort).trim();
+    if (Object.values(REVIEW_SORT).includes(s)) filter.sort = s;
+    else filter.sort = REVIEW_SORT.RECENT;
+  }
+
   return filter;
 }
 
@@ -55,7 +63,7 @@ function buildListFilter(req) {
  * @returns {review.ListFilter} */
 export function buildPublicListFilter(req) {
   const filter = buildListFilter(req);
-  const restaurantId = parseId(req.params?.id);
+  const restaurantId = parseId(req.params?.restaurantId);
   filter.restaurantId = restaurantId;
   filter.isVisible = true;
   return filter;
@@ -103,7 +111,13 @@ export function buildAdminListFilter(req) {
   }
 
   const q = query.q == null ? '' : String(query.q).trim();
-  if (q) filter.q = q;
+  if (q) {
+    filter.q = q;
+
+    const st = query.searchTarget == null ? '' : String(query.searchTarget).trim();
+    if (st && Object.values(REVIEW_SEARCH_TARGET).includes(st)) filter.searchTarget = st;
+    else filter.searchTarget = REVIEW_SEARCH_TARGET.CONTENT;
+  }
 
   return filter;
 }

@@ -663,27 +663,27 @@ paths:
           schema:
             type: string
             default: '{{born2eat.sid}}'
+        - name: page
+          in: query
+          description: 페이지
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: 한 페이지당 개수
+          required: false
+          schema:
+            type: integer
         - name: status
           in: query
-          description: ''
+          description: 상태
           required: false
           schema:
             type: string
             enum:
               - PENDING
               - ANSWERED
-        - name: page
-          in: query
-          description: ''
-          required: false
-          schema:
-            type: integer
-        - name: limit
-          in: query
-          description: ''
-          required: false
-          schema:
-            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -702,7 +702,18 @@ paths:
                   - type: object
                     properties:
                       result:
-                        $ref: '#/components/schemas/InquiryList'
+                        allOf:
+                          - type: object
+                            properties:
+                              items:
+                                type: array
+                                items:
+                                  allOf:
+                                    - $ref: '#/components/schemas/InquiryItem'
+                                    - $ref: '#/components/schemas/InquiryDetail'
+                            required:
+                              - items
+                          - $ref: '#/components/schemas/List'
                     required:
                       - result
               example:
@@ -759,6 +770,28 @@ paths:
           schema:
             type: string
             default: '{{born2eat.sid}}'
+        - name: page
+          in: query
+          description: 페이지
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: 한 페이지당 개수
+          required: false
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          description: 정렬 순서
+          required: false
+          schema:
+            type: string
+            enum:
+              - recent
+              - like
+              - rating
         - name: Set-Cookie
           in: header
           description: ''
@@ -777,8 +810,19 @@ paths:
                   - type: object
                     properties:
                       result:
-                        type: object
-                        properties: {}
+                        allOf:
+                          - type: object
+                            properties:
+                              items:
+                                type: array
+                                items:
+                                  allOf:
+                                    - $ref: '#/components/schemas/ReviewItem'
+                                    - $ref: '#/components/schemas/ReviewDetail'
+                                    - $ref: '#/components/schemas/ViewerLiked'
+                            required:
+                              - items
+                          - $ref: '#/components/schemas/List'
                     required:
                       - result
           headers: {}
@@ -801,6 +845,18 @@ paths:
           schema:
             type: string
             default: '{{born2eat.sid}}'
+        - name: page
+          in: query
+          description: 페이지
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: 한 페이지당 개수
+          required: false
+          schema:
+            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -896,9 +952,33 @@ paths:
           in: path
           description: ''
           required: true
-          example: ''
+          example: '1'
           schema:
             type: string
+        - name: page
+          in: query
+          description: 페이지
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: 한 페이지당 개수
+          required: false
+          example: 0
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          description: 정렬 순서
+          required: false
+          example: recent
+          schema:
+            type: string
+            enum:
+              - recent
+              - like
+              - rating
         - name: Set-Cookie
           in: header
           description: ''
@@ -917,8 +997,19 @@ paths:
                   - type: object
                     properties:
                       result:
-                        type: object
-                        properties: {}
+                        allOf:
+                          - type: object
+                            properties:
+                              items:
+                                type: array
+                                items:
+                                  allOf:
+                                    - $ref: '#/components/schemas/ReviewItem'
+                                    - $ref: '#/components/schemas/ReviewDetail'
+                                    - $ref: '#/components/schemas/ViewerLiked'
+                            required:
+                              - items
+                          - $ref: '#/components/schemas/List'
                     required:
                       - result
           headers: {}
@@ -929,7 +1020,9 @@ paths:
     post:
       summary: 리뷰 작성
       deprecated: false
-      description: 정지 회원 사용 불가.
+      description: |-
+        - 정지 회원 사용 불가
+        - 사용자가 한 가게에 여러 개 작성 가능
       tags:
         - Restaurants
       parameters:
@@ -944,7 +1037,7 @@ paths:
           in: path
           description: ''
           required: true
-          example: ''
+          example: '1'
           schema:
             type: string
         - name: Set-Cookie
@@ -959,7 +1052,44 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              properties: {}
+              properties:
+                rating:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+                  description: 별점
+                  example: 4
+                content:
+                  description: 리뷰 내용
+                  example: 태그 포함 테스트
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: tag 타입 태그
+                  example:
+                    - special-day
+                    - honbap
+                    - wron-tags
+                captions:
+                  type: array
+                  items:
+                    type: string
+                  description: 사진 캡션
+                  example:
+                    - 잘 익은 케이크
+                    - 두 번째 사진 캡션
+                photos:
+                  format: binary
+                  type: string
+                  description: 사진
+                  example:
+                    - file://C:\Users\user\Downloads\잘 익은 케이크.png
+                    - file://C:\Users\user\Downloads\잘 익은 케이크.png
+              required:
+                - rating
+                - content
             examples: {}
         required: true
       responses:
@@ -973,8 +1103,7 @@ paths:
                   - type: object
                     properties:
                       result:
-                        type: object
-                        properties: {}
+                        $ref: '#/components/schemas/Id'
                     required:
                       - result
           headers: {}
@@ -1068,7 +1197,8 @@ paths:
                   examples:
                     - - '["tagA", "tagB"]'
                   example:
-                    - '["tagA", "tagB"]'
+                    - tagA
+                    - tagB
                 photosPatch:
                   type: string
                   description: 기존 사진의 JSON 문자열
@@ -1180,13 +1310,6 @@ paths:
           schema:
             type: string
             default: '{{born2eat.sid}}'
-        - name: limit
-          in: query
-          description: 한 페이지당 제한
-          required: false
-          example: 0
-          schema:
-            type: integer
         - name: page
           in: query
           description: 페이지
@@ -1194,16 +1317,33 @@ paths:
           example: 0
           schema:
             type: integer
-        - name: userId
+        - name: limit
           in: query
-          description: 특정 사용자
+          description: 한 페이지당 개수
           required: false
           example: 0
           schema:
             type: integer
+        - name: userId
+          in: query
+          description: '필터: 특정 사용자 PK'
+          required: false
+          example: 0
+          schema:
+            type: integer
+        - name: status
+          in: query
+          description: '필터: 답변 여부'
+          required: false
+          example: ''
+          schema:
+            type: string
+            enum:
+              - PENDING
+              - ANSWERED
         - name: type
           in: query
-          description: 문의 유형 [전체보기 / 일반 / ...] 필터
+          description: '필터: 문의 유형'
           required: false
           schema:
             type: string
@@ -1213,16 +1353,6 @@ paths:
               - RESTAURANT
               - ACCOUNT
               - OTHER
-        - name: status
-          in: query
-          description: 답변 여부 [미답변 / 답변 완료] 필터
-          required: false
-          example: ''
-          schema:
-            type: string
-            enum:
-              - PENDING
-              - ANSWERED
         - name: q
           in: query
           description: 검색
@@ -1257,7 +1387,18 @@ paths:
                   - type: object
                     properties:
                       result:
-                        $ref: '#/components/schemas/InquiryAdminList'
+                        allOf:
+                          - type: object
+                            properties:
+                              items:
+                                type: array
+                                items:
+                                  allOf:
+                                    - $ref: '#/components/schemas/InquiryItem'
+                                    - $ref: '#/components/schemas/InquiryAdmin'
+                            required:
+                              - items
+                          - $ref: '#/components/schemas/List'
                     required:
                       - result
               example:
@@ -1303,12 +1444,7 @@ paths:
     get:
       summary: 문의 상세보기
       deprecated: false
-      description: >-
-        - `GET /admin/inquiries/{id}`의 `result`는 `GET /admin/inquiries`의
-        `items[]` 요소와 동일한 스키마이며, 목록 응답만으로도 상세 화면을 구성할 수 있습니다.
-
-        - [내 문의: 첨부 이미지 필요, 관리자 목록: 불필요, 관리자 상세: 필요]와 구조라, 스키마 분리로 인한 관리 복잡도를
-        줄이기 위해 동일 스키마로 설계했습니다.
+      description: ''
       tags:
         - Admin
       parameters:
@@ -1344,7 +1480,10 @@ paths:
                   - type: object
                     properties:
                       result:
-                        $ref: '#/components/schemas/InquiryAdminItem'
+                        allOf:
+                          - $ref: '#/components/schemas/InquiryItem'
+                          - $ref: '#/components/schemas/InquiryAdmin'
+                          - $ref: '#/components/schemas/InquiryDetail'
                     required:
                       - result
           headers: {}
@@ -1656,6 +1795,68 @@ paths:
           schema:
             type: string
             default: '{{born2eat.sid}}'
+        - name: page
+          in: query
+          description: 페이지
+          required: false
+          example: 0
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: 한 페이지당 개수
+          required: false
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          description: 정렬 방식
+          required: false
+          schema:
+            type: string
+            default: recent
+            enum:
+              - recent
+              - like
+              - rating
+        - name: restaurantId
+          in: query
+          description: '필터: 특정 음식점 PK'
+          required: false
+          schema:
+            type: integer
+        - name: userId
+          in: query
+          description: '필터: 특정 유저 PK'
+          required: false
+          schema:
+            type: integer
+        - name: isVisible
+          in: query
+          description: '필터: 공개 여부'
+          required: false
+          example: ''
+          schema:
+            type: boolean
+        - name: q
+          in: query
+          description: 검색어
+          required: false
+          example: TE
+          schema:
+            type: string
+        - name: searchTarget
+          in: query
+          description: 검색 범위
+          required: false
+          example: USER
+          schema:
+            type: string
+            enum:
+              - CONTENT
+              - RESTAURANT
+              - USER
+            default: CONTENT
         - name: Set-Cookie
           in: header
           description: ''
@@ -1669,8 +1870,23 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties: {}
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        allOf:
+                          - type: object
+                            properties:
+                              items:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/ReviewItem'
+                            required:
+                              - items
+                          - $ref: '#/components/schemas/List'
+                    required:
+                      - result
           headers: {}
         '500':
           $ref: '#/components/responses/Internal'
@@ -1750,6 +1966,38 @@ components:
         - PENDING
         - ANSWERED
       default: PENDING
+    Id:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 대상 PK
+      required:
+        - id
+    List:
+      type: object
+      properties:
+        limit:
+          type: integer
+          description: 한 페이지당 개수
+        page:
+          type: integer
+          description: 페이지
+        total:
+          type: integer
+          description: 총 개수
+      required:
+        - limit
+        - page
+        - total
+    ViewerLiked:
+      type: object
+      properties:
+        viewerLiked:
+          type: boolean
+          description: 방문자의 좋아요 여부
+      required:
+        - viewerLiked
     InquiryItem:
       type: object
       properties:
@@ -1768,17 +2016,6 @@ components:
         status:
           $ref: '#/components/schemas/InquiryStatus'
           description: 답변 여부
-        imagePaths:
-          type: array
-          items:
-            type: string
-            description: URL
-          description: 첨부 사진 리스트
-        answer:
-          type:
-            - string
-            - 'null'
-          description: 답변
         createdAt:
           type: string
           format: date-time
@@ -1797,60 +2034,51 @@ components:
         - createdAt
         - answeredAt
         - content
+    InquiryDetail:
+      type: object
+      properties:
+        imagePaths:
+          type: array
+          items:
+            type: string
+            description: 이미지 경로
+          description: 첨부 이미지 목록
+        answer:
+          type:
+            - string
+            - 'null'
+          description: 답변
+      required:
         - answer
         - imagePaths
-    InquiryList:
-      allOf:
-        - $ref: '#/components/schemas/List'
-        - type: object
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/InquiryItem'
-          required:
-            - items
-    InquiryAdminItem:
-      allOf:
-        - $ref: '#/components/schemas/InquiryItem'
-        - type: object
-          properties:
-            userId:
-              type:
-                - integer
-                - 'null'
-              description: 문의자 FK
-            userNickname:
-              type:
-                - string
-                - 'null'
-              description: 문의자 닉네임
-            answeredByUserId:
-              type:
-                - integer
-                - 'null'
-              description: 답변자 FK
-            answeredByUserNickname:
-              type:
-                - string
-                - 'null'
-              description: 답변자 닉네임
-          required:
-            - userId
-            - userNickname
-            - answeredByUserId
-            - answeredByUserNickname
-    InquiryAdminList:
-      allOf:
-        - $ref: '#/components/schemas/List'
-        - type: object
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/InquiryAdminItem'
-          required:
-            - items
+    InquiryAdmin:
+      type: object
+      properties:
+        userId:
+          type:
+            - integer
+            - 'null'
+          description: 문의자 PK
+        userNickname:
+          type:
+            - string
+            - 'null'
+          description: 문의자 닉네임
+        answeredByUserId:
+          type:
+            - integer
+            - 'null'
+          description: 답변자 PK
+        answeredByUserNickname:
+          type:
+            - string
+            - 'null'
+          description: 답변자 닉네임
+      required:
+        - userId
+        - userNickname
+        - answeredByUserId
+        - answeredByUserNickname
     UserItem:
       type: object
       properties:
@@ -1888,30 +2116,100 @@ components:
         - role
         - status
         - suspendedUntil
-    Id:
+    ReviewItem:
       type: object
       properties:
-        id:
+        reviewId:
           type: integer
-          description: 대상 PK
+          description: 리뷰 PK
+        restaurantId:
+          type: integer
+          description: 음식점 PK
+        userId:
+          type: integer
+          description: 작성자 PK
+        userNickname:
+          type: string
+          description: 작성자 닉네임
+        rating:
+          type: number
+          description: 별점
+          minimum: 1
+          maximum: 5
+        content:
+          type: string
+          description: 내용
+        isVisible:
+          type: boolean
+          description: 숨김 여부
+        createdAt:
+          type: string
+          description: 작성일
+          format: date-time
+        updatedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: 수정일
+        likeCount:
+          type: integer
+          description: 좋아요 수
       required:
-        - id
-    List:
+        - reviewId
+        - restaurantId
+        - userId
+        - userNickname
+        - rating
+        - content
+        - createdAt
+        - isVisible
+        - updatedAt
+        - likeCount
+    ReviewDetail:
       type: object
       properties:
-        limit:
-          type: integer
-          description: 한 페이지당 개수
-        page:
-          type: integer
-          description: 페이지
-        total:
-          type: integer
-          description: 총 개수
+        tags:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: 태그 PK
+              code:
+                type: string
+                description: 태그 코드
+              name:
+                type: string
+                description: 태그명
+            required:
+              - id
+              - code
+              - name
+          description: 태그 목록
+        photos:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: 사진 PK
+              path:
+                type: string
+                description: 사진 경로
+              caption:
+                type: string
+                description: 사진 캡션
+            required:
+              - id
+              - path
+              - caption
+          description: 사진 목록
       required:
-        - limit
-        - page
-        - total
+        - tags
+        - photos
     ResponseSuccess:
       type: object
       properties:

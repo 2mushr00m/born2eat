@@ -24,7 +24,7 @@ export const create = wrap(async (req, res) => {
 /** GET /me/inquiries */
 export const myList = wrap(async (req, res) => {
   const filter = buildMyListFilter(req);
-  const result = await readInquiryList(filter, { mode: 'ME' });
+  const result = await readInquiryList(filter, { mode: 'ME', include: { detail: true } });
   ok(res, result);
 });
 
@@ -33,7 +33,7 @@ export const myList = wrap(async (req, res) => {
 /** GET /admin/inquiries */
 export const adminList = wrap(async (req, res) => {
   const filter = buildAdminListFilter(req);
-  const result = await readInquiryList(filter, { mode: 'ADMIN' });
+  const result = await readInquiryList(filter, { mode: 'ADMIN', include: { detail: false } });
   ok(res, result);
 });
 

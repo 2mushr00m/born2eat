@@ -32,13 +32,13 @@ function buildListFilter(req) {
       max: MAX_LIMIT,
     }) ?? DEFAULT_LIMIT;
 
+  /** @type {inquiry.ListFilter} */
+  const filter = { page, limit };
+
   if (query.status != null) {
     const s = String(query.status).trim();
     if (Object.values(INQUIRY_STATUS).includes(s)) filter.status = s;
   }
-
-  /** @type {inquiry.ListFilter} */
-  const filter = { page, limit };
 
   return filter;
 }

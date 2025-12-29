@@ -16,7 +16,11 @@ import { readReviewList, createReview, updateReview, deleteReview, hideReview } 
 export const list = wrap(async (req, res) => {
   const viewerId = req.user?.userId ?? null;
   const filter = buildPublicListFilter(req);
-  const result = await readReviewList(filter, { mode: 'PUBLIC', viewerId });
+  const result = await readReviewList(filter, {
+    mode: 'PUBLIC',
+    viewerId,
+    include: { detail: true, viewerLiked: true },
+  });
   ok(res, result);
 });
 
@@ -52,7 +56,11 @@ export const destroy = wrap(async (req, res) => {
 export const myList = wrap(async (req, res) => {
   const userId = req.user?.userId ?? null;
   const filter = buildMyListFilter(req);
-  const result = await readReviewList(filter, { mode: 'ME', viewerId: userId });
+  const result = await readReviewList(filter, {
+    mode: 'ME',
+    viewerId: userId,
+    include: { detail: true, viewerLiked: true },
+  });
   ok(res, result);
 });
 
@@ -62,7 +70,11 @@ export const myList = wrap(async (req, res) => {
 export const adminList = wrap(async (req, res) => {
   const filter = buildAdminListFilter(req);
   const viewerId = req.user?.userId ?? null;
-  const result = await readReviewList(filter, { mode: 'ADMIN', viewerId });
+  const result = await readReviewList(filter, {
+    mode: 'ADMIN',
+    viewerId,
+    include: { detail: false, viewerLiked: false },
+  });
   ok(res, result);
 });
 

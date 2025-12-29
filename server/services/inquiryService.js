@@ -7,6 +7,44 @@ import { INQUIRY_SEARCH_TARGET, INQUIRY_STATUS } from '../common/constants.js';
 
 const MAX_IMAGES = 3;
 
+/** inquiry_image attach
+ * @param {import('mysql2/promise').PoolConnection} conn
+ * @param {Array<any>} items
+ * @returns {Promise<void>}
+ */
+async function attachInquiryImages(conn, items) {
+  const ids = items.map((r) => Number(r?.inquiryId)).filter((v) => Number.isFinite(v));
+
+  const imageMap = new Map();
+  for (const id of ids) imageMap.set(id, []);
+
+  if (ids.length) {
+    const placeholders = ids.map(() => '?').join(',');
+    const [imgRows] = await conn.execute(
+      `
+      SELECT inquiry_id AS inquiryId, file_path AS filePath
+      FROM inquiry_image
+      WHERE inquiry_id IN (${placeholders})
+      `,
+      ids,
+    );
+
+    for (const r of imgRows || []) {
+      const iid = Number(r?.inquiryId);
+      const fp = r?.filePath == null ? '' : String(r.filePath).trim();
+      if (!Number.isFinite(iid) || !fp) continue;
+
+      const arr = imageMap.get(iid);
+      if (arr) arr.push(fp);
+    }
+  }
+
+  for (const it of items) {
+    const iid = Number(it?.inquiryId);
+    it.imagePaths = Number.isFinite(iid) ? imageMap.get(iid) || [] : [];
+  }
+}
+
 /** 문의 생성
  * @param {number | null} userId
  * @param {inquiry.CreatePayload} payload
@@ -80,12 +118,12 @@ export async function createInquiry(userId, payload) {
 
 /** 문의 목록 조회
  * @param {inquiry.ListFilter} filter
- * @param {{ mode?: 'ME' | 'ADMIN' }} opt
- * @returns {Promise<inquiry.List | inquiry.AdminList>}
+ * @param {{ mode?: 'ME' | 'ADMIN', include?: { detail?: boolean } }} [opt]
+ * @returns {Promise<inquiry.List>}
  */
 export async function readInquiryList(filter, opt) {
   const { limit, page, q, status, type, userId } = filter;
-  const { mode = 'ME' } = opt || {};
+  const { mode = 'ME', include } = opt || {};
   const isAdmin = mode === 'ADMIN';
 
   if (!isAdmin && userId == null)
@@ -96,8 +134,8 @@ export async function readInquiryList(filter, opt) {
 
   const conn = await db.getConnection();
   try {
-    const where = [];
     const params = {};
+    const where = [];
 
     if (userId != null) {
       where.push('i.user_id = :userId');
@@ -146,7 +184,7 @@ export async function readInquiryList(filter, opt) {
 
     // 2) items
     const offset = (page - 1) * limit;
-    const selectAdminCols = isAdmin
+    const adminSql = isAdmin
       ? `,
       i.user_id      AS userId,
       u.nickname     AS userNickname,
@@ -158,6 +196,7 @@ export async function readInquiryList(filter, opt) {
       LEFT JOIN user u ON u.user_id = i.user_id
       LEFT JOIN user au ON au.user_id = i.answered_by_user_id`
       : '';
+    const detailSql = !!include?.detail ? 'i.answer,' : '';
 
     const [rows] = await conn.execute(
       `
@@ -167,57 +206,26 @@ export async function readInquiryList(filter, opt) {
         i.content,
         i.type,
         i.status,
-        i.answer,
+        ${detailSql}
         i.created_at   AS createdAt,
         i.answered_at  AS answeredAt
-        ${selectAdminCols}
+        ${adminSql}
       FROM inquiry i
       ${joinAdmin}
       ${whereSql}
       ORDER BY i.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
       `,
-      { ...params },
+      params,
     );
-
     const items = Array.isArray(rows) ? rows : [];
-    const ids = items.map((r) => Number(r?.inquiryId)).filter((v) => Number.isFinite(v));
 
-    const imageMap = new Map();
-    if (ids.length) {
-      const placeholders = ids.map(() => '?').join(',');
-      const [imgRows] = await conn.execute(
-        `
-        SELECT inquiry_id AS inquiryId, file_path AS filePath
-        FROM inquiry_image
-        WHERE inquiry_id IN (${placeholders})
-        `,
-        ids,
-      );
-
-      for (const r of imgRows || []) {
-        const iid = Number(r?.inquiryId);
-        const fp = r?.filePath == null ? '' : String(r.filePath).trim();
-        if (!Number.isFinite(iid) || !fp) continue;
-
-        if (!imageMap.has(iid)) imageMap.set(iid, []);
-        imageMap.get(iid).push(fp);
-      }
+    // 3) detail attach (imagePaths)
+    if (!!include?.detail) {
+      await attachInquiryImages(conn, items);
     }
 
-    const withImages = items.map((it) => {
-      const iid = Number(it?.inquiryId);
-      const imagePaths = Number.isFinite(iid) ? imageMap.get(iid) || [] : [];
-      return { ...it, imagePaths };
-    });
-
-    if (isAdmin) {
-      /** @type {inquiry.AdminList} */
-      return { items: withImages, page, limit, total };
-    }
-
-    /** @type {inquiry.List} */
-    return { items: withImages, page, limit, total };
+    return { items, page, limit, total };
   } catch (err) {
     if (err instanceof AppError) throw err;
     throw new AppError(ERR.DB, {
@@ -236,8 +244,8 @@ export async function readInquiryList(filter, opt) {
 
 /** 문의 상세 조회
  * @param {number} inquiryId
- * @param {{ mode?: 'ME' | 'ADMIN', userId?: number }} opt
- * @returns {Promise<inquiry.Item | inquiry.AdminItem>}
+ * @param {{ mode?: 'ME' | 'ADMIN', userId?: number }} [opt]
+ * @returns {Promise<inquiry.Item>}
  */
 export async function readInquiry(inquiryId, opt) {
   const { mode = 'ME', userId } = opt || {};
@@ -259,7 +267,7 @@ export async function readInquiry(inquiryId, opt) {
       params.userId = userId;
     }
 
-    const selectAdminCols = isAdmin
+    const adminSql = isAdmin
       ? `,
       i.user_id      AS userId,
       u.nickname     AS userNickname,
@@ -283,7 +291,7 @@ export async function readInquiry(inquiryId, opt) {
         i.created_at   AS createdAt,
         i.answer,
         i.answered_at  AS answeredAt
-        ${selectAdminCols}
+        ${adminSql}
       FROM inquiry i
       ${joinAdmin}
       WHERE ${where.join(' AND ')}
@@ -332,7 +340,7 @@ export async function readInquiry(inquiryId, opt) {
 /** 문의 답변
  * @param {number} inquiryId
  * @param {inquiry.AnswerPayload} payload
- * @param {{ actorId: number }} opt
+ * @param {{ actorId: number }} [opt]
  * @returns {Promise<void>}
  */
 export async function answerInquiry(inquiryId, payload, opt) {

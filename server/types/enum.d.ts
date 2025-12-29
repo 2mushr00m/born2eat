@@ -14,5 +14,5 @@ export type UserRole = 'ADMIN' | 'USER';
 
 export type TagType = 'food' | 'tag';
 
-export type ReivewSort = 'recent' | 'like' | 'rating';
-export type ReviewSearchTarget = 'ALL' | 'RESTAURANT' | 'USER';
+export type ReviewSort = 'recent' | 'like' | 'rating';
+export type ReviewSearchTarget = 'CONTENT' | 'RESTAURANT' | 'USER';
