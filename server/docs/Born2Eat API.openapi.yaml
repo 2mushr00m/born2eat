@@ -386,10 +386,8 @@ paths:
                               - 'null'
                             description: 프로필 URL
                           role:
-                            $ref: '#/components/schemas/UserRole'
                             description: 역할
                           status:
-                            $ref: '#/components/schemas/UserStatus'
                             description: 상태
                           suspendedUntil:
                             type:
@@ -508,10 +506,8 @@ paths:
                               - 'null'
                             description: 프로필 URL
                           role:
-                            $ref: '#/components/schemas/UserRole'
                             description: 역할
                           status:
-                            $ref: '#/components/schemas/UserStatus'
                             description: 상태
                           suspendedUntil:
                             type:
@@ -875,8 +871,18 @@ paths:
                   - type: object
                     properties:
                       result:
-                        type: object
-                        properties: {}
+                        allOf:
+                          - type: object
+                            properties:
+                              items:
+                                type: array
+                                items:
+                                  allOf:
+                                    - $ref: '#/components/schemas/RestaurantItem'
+                                    - $ref: '#/components/schemas/ViewerLiked'
+                            required:
+                              - items
+                          - $ref: '#/components/schemas/List'
                     required:
                       - result
           headers: {}
@@ -924,8 +930,9 @@ paths:
                   - type: object
                     properties:
                       result:
-                        type: object
-                        properties: {}
+                        allOf:
+                          - $ref: '#/components/schemas/RestaurantDetail'
+                          - $ref: '#/components/schemas/ViewerLiked'
                     required:
                       - result
           headers: {}
@@ -977,7 +984,7 @@ paths:
             type: string
             enum:
               - recent
-              - like
+              - popular
               - rating
         - name: Set-Cookie
           in: header
@@ -1137,12 +1144,12 @@ paths:
 
         // 기존 사진 변경
         fd.append('photos', fileA);
-        fd.append('photoIds', '101');
+        fd.append('ids', '101');
         fd.append('captions', '사진 변경');
 
         // 신규 사진 추가
         fd.append('photos', fileB);
-        fd.append('photoIds', '');
+        fd.append('ids', '');
         fd.append('captions', '');
         ```
       tags:
@@ -1585,8 +1592,18 @@ paths:
                   - type: object
                     properties:
                       result:
-                        type: object
-                        properties: {}
+                        allOf:
+                          - type: object
+                            properties:
+                              items:
+                                type: array
+                                items:
+                                  allOf:
+                                    - $ref: '#/components/schemas/RestaurantItem'
+                                    - $ref: '#/components/schemas/RestaurantAdmin'
+                            required:
+                              - items
+                          - $ref: '#/components/schemas/List'
                     required:
                       - result
           headers: {}
@@ -1674,8 +1691,9 @@ paths:
                   - type: object
                     properties:
                       result:
-                        type: object
-                        properties: {}
+                        allOf:
+                          - $ref: '#/components/schemas/RestaurantDetail'
+                          - $ref: '#/components/schemas/RestaurantAdmin'
                     required:
                       - result
           headers: {}
@@ -1817,7 +1835,7 @@ paths:
             default: recent
             enum:
               - recent
-              - like
+              - popular
               - rating
         - name: restaurantId
           in: query
@@ -1892,8 +1910,8 @@ paths:
           $ref: '#/components/responses/Internal'
           description: ''
       security: []
-  /admin/reviews/{reviewsId}:
-    delete:
+  /admin/reviews/{reviewId}/hide:
+    patch:
       summary: 리뷰 숨기기
       deprecated: false
       description: hard delete 대신 is_visible=0 처리
@@ -1907,11 +1925,10 @@ paths:
           schema:
             type: string
             default: '{{born2eat.sid}}'
-        - name: reviewsId
+        - name: reviewId
           in: path
           description: ''
           required: true
-          example: ''
           schema:
             type: string
         - name: Set-Cookie
@@ -1927,8 +1944,51 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties: {}
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - $ref: '#/components/schemas/Id'
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /admin/reviews/{reviewId}/show:
+    patch:
+      summary: 리뷰 보이기
+      deprecated: false
+      description: is_visible=1 처리
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: reviewId
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - $ref: '#/components/schemas/Id'
           headers: {}
         '500':
           $ref: '#/components/responses/Internal'
@@ -1937,35 +1997,6 @@ paths:
 webhooks: {}
 components:
   schemas:
-    UserRole:
-      type: string
-      enum:
-        - ADMIN
-        - USER
-      default: USER
-    UserStatus:
-      type: string
-      enum:
-        - ACTIVE
-        - SUSPENDED
-        - BANNED
-        - DELETED
-      default: ACTIVE
-    InquiryType:
-      type: string
-      enum:
-        - GENERAL
-        - BUG
-        - RESTAURANT
-        - ACCOUNT
-        - OTHER
-      default: GENERAL
-    InquiryStatus:
-      type: string
-      enum:
-        - PENDING
-        - ANSWERED
-      default: PENDING
     Id:
       type: object
       properties:
@@ -2011,11 +2042,22 @@ components:
           type: string
           description: 문의 내용
         type:
-          $ref: '#/components/schemas/InquiryType'
+          type: string
           description: 문의 유형
+          enum:
+            - GENERAL
+            - BUG
+            - RESTAURANT
+            - ACCOUNT
+            - OTHER
+          default: GENERAL
         status:
-          $ref: '#/components/schemas/InquiryStatus'
+          type: string
           description: 답변 여부
+          enum:
+            - PENDING
+            - ANSWERED
+          default: PENDING
         createdAt:
           type: string
           format: date-time
@@ -2097,11 +2139,20 @@ components:
             - 'null'
           description: 프로필 URL
         role:
-          $ref: '#/components/schemas/UserRole'
+          type: string
           description: 역할
+          enum:
+            - ADMIN
+            - USER
+          default: USER
         status:
-          $ref: '#/components/schemas/UserStatus'
+          type: string
           description: 상태
+          enum:
+            - ACTIVE
+            - SUSPENDED
+            - BANNED
+            - DELETED
         suspendedUntil:
           type:
             - string
@@ -2210,6 +2261,319 @@ components:
       required:
         - tags
         - photos
+    RestaurantItem:
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          description: 음식점 PK
+        name:
+          type: string
+          description: 음식점명
+        kakaoPlaceId:
+          type:
+            - string
+            - 'null'
+          description: 카카오맵 ID
+        foodCategory:
+          type:
+            - string
+            - 'null'
+          description: 음식 분류 태그
+        mainFood:
+          type:
+            - string
+            - 'null'
+          description: 대표 음식
+        mainPhoto:
+          type:
+            - string
+            - 'null'
+          description: 메인 사진 경로
+        address:
+          type:
+            - string
+            - 'null'
+          description: 주소
+        longitude:
+          type:
+            - number
+            - 'null'
+          description: 경도
+        latitude:
+          type:
+            - number
+            - 'null'
+          description: 위도
+        ratingSum:
+          type: number
+          description: 평점 합계
+        reviewCount:
+          type: integer
+          description: 리뷰 개수
+        likeCount:
+          type: integer
+          description: 좋아요 수
+        tags:
+          type: array
+          items:
+            type: string
+          description: 태그 목록
+        region:
+          type: object
+          properties:
+            code:
+              type:
+                - string
+                - 'null'
+              description: 법정동 코드
+            depth1:
+              type:
+                - string
+                - 'null'
+              description: 시/도
+            depth2:
+              type:
+                - string
+                - 'null'
+              description: 시/군/구
+          required:
+            - code
+            - depth1
+            - depth2
+          description: 지역
+      required:
+        - restaurantId
+        - name
+        - kakaoPlaceId
+        - foodCategory
+        - mainFood
+        - mainPhoto
+        - address
+        - longitude
+        - latitude
+        - ratingSum
+        - reviewCount
+        - likeCount
+        - tags
+        - region
+    RestaurantDetail:
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          description: 음식점 PK
+        name:
+          type: string
+          description: 음식점명
+        description:
+          type:
+            - string
+            - 'null'
+          description: 설명
+        kakaoPlaceId:
+          type:
+            - string
+            - 'null'
+          description: 카카오맵 ID
+        foodCategory:
+          type:
+            - string
+            - 'null'
+          description: 음식 분류 태그
+        mainFood:
+          type:
+            - string
+            - 'null'
+          description: 대표 음식
+        address:
+          type:
+            - string
+            - 'null'
+          description: 주소
+        longitude:
+          type:
+            - number
+            - 'null'
+          description: 경도
+        latitude:
+          type:
+            - number
+            - 'null'
+          description: 위도
+        ratingSum:
+          type: number
+          description: 평점 합계
+        reviewCount:
+          type: integer
+          description: 리뷰 개수
+        likeCount:
+          type: integer
+          description: 좋아요 수
+        broadcasts:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: 방송 제목
+              episodeNo:
+                type:
+                  - string
+                  - 'null'
+                description: 방송 회차
+              airedAt:
+                type:
+                  - string
+                  - 'null'
+                description: 방송일
+                format: date
+              ott:
+                type: object
+                properties:
+                  NETFLIX:
+                    type: string
+                    description: 넷플릭스 URL
+                  TVING:
+                    type: string
+                    description: 티빙 URL
+                  WAVVE:
+                    type: string
+                    description: 웨이브 URL
+                  WATCHA:
+                    type: string
+                    description: 왓챠 URL
+                description: 방송 OTT
+              youtube:
+                type: array
+                items:
+                  type: string
+                description: 유튜브 영상 URL 목록
+            required:
+              - name
+              - episodeNo
+              - airedAt
+              - ott
+              - youtube
+          description: 방송 정보
+        photos:
+          type: object
+          properties:
+            main:
+              type: array
+              items:
+                $ref: '#/components/schemas/RestaurantPhoto'
+              description: 메인 사진 경로
+            menuBoard:
+              type: array
+              items:
+                $ref: '#/components/schemas/RestaurantPhoto'
+              description: 메뉴판 사진 경로
+            etc:
+              type: array
+              items:
+                $ref: '#/components/schemas/RestaurantPhoto'
+              description: 기타 사진 경로
+          description: 사진 목록
+          required:
+            - main
+            - menuBoard
+            - etc
+        tags:
+          type: array
+          items:
+            type: string
+          description: 태그 목록
+        region:
+          type: object
+          properties:
+            code:
+              type:
+                - string
+                - 'null'
+              description: 법정동 코드
+            depth1:
+              type:
+                - string
+                - 'null'
+              description: 시/도
+            depth2:
+              type:
+                - string
+                - 'null'
+              description: 시/군/구
+          required:
+            - code
+            - depth1
+            - depth2
+          description: 지역
+      required:
+        - restaurantId
+        - name
+        - kakaoPlaceId
+        - foodCategory
+        - mainFood
+        - photos
+        - address
+        - longitude
+        - latitude
+        - ratingSum
+        - reviewCount
+        - likeCount
+        - tags
+        - region
+        - description
+        - broadcasts
+    RestaurantPhoto:
+      type: object
+      properties:
+        filePath:
+          type: string
+          description: 사진 경로
+        caption:
+          type:
+            - string
+            - 'null'
+          description: 캡션
+        createdAt:
+          type: string
+          format: date-time
+          description: 생성일
+        sourceType:
+          type: string
+          description: 출처 유형
+          enum:
+            - USER
+            - ADMIN
+            - CRAWLER
+        sourceUserNickname:
+          type:
+            - string
+            - 'null'
+          description: 출처자 닉네임
+      required:
+        - filePath
+        - caption
+        - createdAt
+        - sourceType
+        - sourceUserNickname
+    RestaurantAdmin:
+      type: object
+      properties:
+        isPublished:
+          type: boolean
+          description: 공개 여부
+        dataStatus:
+          type: string
+          description: 데이터 품질 단계
+          enum:
+            - RAW
+            - BASIC
+            - VERIFIED
+      required:
+        - isPublished
+        - dataStatus
     ResponseSuccess:
       type: object
       properties:

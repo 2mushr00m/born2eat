@@ -1,9 +1,8 @@
 // controllers/meController.js
-import { wrap, ok, created } from '../common/http.js';
-import { parseId, requireString } from '../common/check.js';
+import { wrap, ok } from '../common/http.js';
+import { requireString } from '../common/check.js';
 import { buildUpdatePayload, buildPasswordPayload } from './requests/userRequest.js';
 import { changePassword, deleteUser, readUser, updateUser } from '../services/userService.js';
-import logger from '../common/logger.js';
 
 /* ============== USER ============== */
 

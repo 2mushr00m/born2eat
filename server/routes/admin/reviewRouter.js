@@ -5,7 +5,7 @@ import * as reviewController from '../../controllers/reviewController.js';
 const router = express.Router();
 
 router.get('/', reviewController.adminList);
-router.delete('/:revieId', reviewController.adminHide);
-// router.patch('/:revieId',  reviewController.adminUpdate); // 필요 시
+router.patch('/:revieId/hide', reviewController.adminHide);
+router.patch('/:revieId/show', reviewController.adminShow);
 
 export default router;

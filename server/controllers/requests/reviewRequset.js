@@ -185,7 +185,7 @@ export function buildUpdatePayload(req) {
 
   // 2) content
   if (body.content != null) {
-    const content = requireString(body.content);
+    const content = requireString(body.content, '리뷰 내용');
     if (content) payload.content = content;
   }
 

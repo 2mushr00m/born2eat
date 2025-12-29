@@ -18,7 +18,7 @@ export const RESTAURANT_PHOTO_SOURCE = /** @type {const} */ ({
 
 export const REVIEW_SORT = /** @type {const} */ ({
   RECENT: 'recent',
-  LIKE: 'like',
+  POPULAR: 'popular',
   RATING: 'rating',
 });
 export const REVIEW_SEARCH_TARGET = /** @type {const} */ ({
@@ -31,7 +31,7 @@ export const BROADCAST_OTT = /** @type {const} */ ({
   NETFLIX: 'NETFLIX',
   TVING: 'TVING',
   WAVVE: 'WAVVE',
-  ETC: 'ETC',
+  WATCHA: 'WATCHA',
 });
 
 export const INQUIRY_TYPE = /** @type {const} */ ({

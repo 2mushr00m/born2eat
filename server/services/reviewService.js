@@ -320,7 +320,7 @@ export async function readReviewList(filter, opt) {
     const offset = (page - 1) * limit;
     const ORDER_BY = {
       [REVIEW_SORT.RECENT]: 'ORDER BY r.created_at DESC',
-      [REVIEW_SORT.LIKE]: 'ORDER BY likeCount DESC, r.created_at DESC',
+      [REVIEW_SORT.POPULAR]: 'ORDER BY likeCount DESC, r.created_at DESC',
       [REVIEW_SORT.RATING]: 'ORDER BY r.rating DESC, r.created_at DESC',
     };
     const orderBySql = ORDER_BY[sort] ?? ORDER_BY[REVIEW_SORT.RECENT];
@@ -800,6 +800,96 @@ export async function hideReview(reviewId, opt) {
     if (err instanceof AppError) throw err;
     throw new AppError(ERR.DB, {
       message: '리뷰 숨김 처리 중 오류가 발생했습니다.',
+      data: { targetId: reviewId, extra: { actorId }, dbCode: err?.code },
+      cause: err,
+    });
+  } finally {
+    conn.release();
+  }
+}
+
+/** 리뷰 보이기
+ * @param {number} reviewId
+ * @param {{ actorId?: number | null }} [opt]
+ * @returns {Promise<void>}
+ */
+export async function showReview(reviewId, opt) {
+  const { actorId = null } = opt || {};
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1) 리뷰 조회 + 락
+    const [rows] = await conn.execute(
+      `
+      SELECT
+        r.review_id     AS reviewId,
+        r.restaurant_id AS restaurantId,
+        r.rating        AS rating,
+        r.is_visible    AS isVisible
+      FROM review r
+      WHERE r.review_id = :reviewId
+      LIMIT 1
+      FOR UPDATE
+      `,
+      { reviewId },
+    );
+
+    const it = rows?.[0];
+    if (!it)
+      throw new AppError(ERR.NOT_FOUND, {
+        message: '해당 리뷰가 존재하지 않습니다.',
+        data: { targetId: reviewId, extra: { actorId } },
+      });
+
+    const restaurantId = Number(it.restaurantId);
+    const rating = Number(it.rating) || 0;
+    const wasVisible = Number(it.isVisible) === 1;
+
+    // 이미 숨김이면 그대로 종료 (집계도 건드리지 않음)
+    if (!wasVisible) {
+      await conn.commit();
+      return;
+    }
+
+    // 2) review 숨김 처리 (is_visible=0)
+    const [uRes] = await conn.execute(
+      `
+      UPDATE review
+      SET is_visible = 0
+      WHERE review_id = :reviewId
+        AND is_visible = 1
+      `,
+      { reviewId },
+    );
+
+    if (!uRes?.affectedRows)
+      throw new AppError(ERR.DB, {
+        message: '리뷰 보이기 처리에 실패했습니다.',
+        data: { targetId: reviewId, extra: { actorId } },
+      });
+
+    // 3) restaurant 집계(증분 감소)
+    await conn.execute(
+      `
+      UPDATE restaurant
+      SET
+        rating_sum = rating_sum + :rating,
+        review_count = review_count + 1
+      WHERE restaurant_id = :restaurantId
+      `,
+      { restaurantId, rating },
+    );
+
+    await conn.commit();
+  } catch (err) {
+    try {
+      await conn.rollback();
+    } catch (_) {}
+
+    if (err instanceof AppError) throw err;
+    throw new AppError(ERR.DB, {
+      message: '리뷰 보이기 처리 중 오류가 발생했습니다.',
       data: { targetId: reviewId, extra: { actorId }, dbCode: err?.code },
       cause: err,
     });

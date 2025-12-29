@@ -47,8 +47,8 @@ export async function sessionUser(req, res, next) {
     // 정지 기간이 지나면 자동해제
     if (
       user.status === USER_STATUS.SUSPENDED &&
-      user.suspended_until != null &&
-      new Date(user.suspended_until).getTime() <= Date.now()
+      user.suspendedUntil != null &&
+      new Date(user.suspendedUntil).getTime() <= Date.now()
     ) {
       const status = USER_STATUS.ACTIVE;
       await conn.execute(

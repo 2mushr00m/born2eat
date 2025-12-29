@@ -123,12 +123,12 @@ async function resolveFoodTagId(foodCode) {
 
 /** 음식점 목록 조회
  * @param {restaurant.ListFilter} filter
- * @param {{ mode?: 'PUBLIC' | 'ADMIN' }} [opt]
+ * @param {{ mode?: 'PUBLIC' | 'ADMIN', include?: { viewerLiked: boolean } }} [opt]
  * @returns {Promise<restaurant.List>}
  */
 export async function readRestaurantList(filter, opt = {}) {
-  const { food, tags, region, q, page, limit } = filter;
-  const { mode = 'PUBLIC' } = opt;
+  const { page, limit, sort, food, tags, region, q } = filter;
+  const { mode = 'PUBLIC', include } = opt;
   const isAdmin = mode === 'ADMIN';
   const offset = (page - 1) * limit;
 
@@ -504,7 +504,7 @@ export async function readRestaurant(restaurantId, opt = {}) {
         if (o.platform === BROADCAST_OTT.NETFLIX) ott.NETFLIX = o.ottUrl;
         else if (o.platform === BROADCAST_OTT.TVING) ott.TVING = o.ottUrl;
         else if (o.platform === BROADCAST_OTT.WAVVE) ott.WAVVE = o.ottUrl;
-        else ott.etc = o.ottUrl;
+        else ott.WATCHA = o.ottUrl;
       }
 
       // 4-2) YouTube: (broadcastId, episodeNo) 기준으로 모으기

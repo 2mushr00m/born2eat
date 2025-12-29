@@ -8,7 +8,14 @@ import {
   buildCreatePayload,
   buildUpdatePayload,
 } from './requests/reviewRequset.js';
-import { readReviewList, createReview, updateReview, deleteReview, hideReview } from '../services/reviewService.js';
+import {
+  readReviewList,
+  createReview,
+  updateReview,
+  deleteReview,
+  hideReview,
+  showReview,
+} from '../services/reviewService.js';
 
 /* ============== PUBLIC ============== */
 
@@ -35,7 +42,7 @@ export const create = wrap(async (req, res) => {
   created(res, { id: reviewId });
 });
 
-/** PATCH /reviews/:reviewsId */
+/** PATCH /reviews/:reviewId */
 export const update = wrap(async (req, res) => {
   const reviewId = parseId(req.params?.reviewId);
   const userId = req.user?.userId ?? null;
@@ -44,7 +51,7 @@ export const update = wrap(async (req, res) => {
   ok(res, { id: reviewId });
 });
 
-/** DELETE /reviews/:reviewsId */
+/** DELETE /reviews/:reviewId */
 export const destroy = wrap(async (req, res) => {
   const reviewId = parseId(req.params?.reviewId);
   const userId = req.user?.userId ?? null;
@@ -78,10 +85,18 @@ export const adminList = wrap(async (req, res) => {
   ok(res, result);
 });
 
-/** DELETE /admin/reviews/:reviewsId */
+/** PATCH /admin/reviews/:reviewId/hide */
 export const adminHide = wrap(async (req, res) => {
   const reviewId = parseId(req.params?.reviewId);
   const actorId = req.user?.userId ?? null;
   await hideReview(reviewId, { actorId });
-  ok(res);
+  ok(res, { id: reviewId });
+});
+
+/** PATCH /admin/reviews/:reviewId/show */
+export const adminShow = wrap(async (req, res) => {
+  const reviewId = parseId(req.params?.reviewId);
+  const actorId = req.user?.userId ?? null;
+  await showReview(reviewId, { actorId });
+  ok(res, { id: reviewId });
 });

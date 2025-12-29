@@ -91,7 +91,7 @@ app.use('/upload', express.static(path.join(__dirname, 'upload')));
 app.use('/tags', tagRouter);
 app.use('/restaurants', sessionUser, restaurantRouter);
 app.use('/reviews', sessionUser, requireAuth, reviewRouter);
-app.use('/inquiries', inquiryRouter);
+app.use('/inquiries', sessionUser, inquiryRouter);
 app.use('/users', userRouter);
 app.use('/auth', authRouter);
 app.use('/me', sessionUser, requireAuth, meRouter);
