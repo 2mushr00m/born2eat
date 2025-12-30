@@ -15,6 +15,11 @@ export const RESTAURANT_PHOTO_SOURCE = /** @type {const} */ ({
   ADMIN: 'ADMIN',
   CRAWLER: 'CRAWLER',
 });
+export const RESTAURANT_SORT = /** @type {const} */ ({
+  RECENT: 'recent',
+  POPULAR: 'popular',
+  RECOMMEND: 'recommend',
+});
 
 export const REVIEW_SORT = /** @type {const} */ ({
   RECENT: 'recent',

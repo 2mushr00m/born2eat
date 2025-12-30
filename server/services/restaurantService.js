@@ -123,7 +123,7 @@ async function resolveFoodTagId(foodCode) {
 
 /** 음식점 목록 조회
  * @param {restaurant.ListFilter} filter
- * @param {{ mode?: 'PUBLIC' | 'ADMIN', include?: { viewerLiked: boolean } }} [opt]
+ * @param {{ mode?: 'PUBLIC' | 'ADMIN', include?: { viewerLiked?: boolean } }} [opt]
  * @returns {Promise<restaurant.List>}
  */
 export async function readRestaurantList(filter, opt = {}) {

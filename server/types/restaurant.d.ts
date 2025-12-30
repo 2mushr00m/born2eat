@@ -9,10 +9,16 @@ declare global {
       limit: number;
       sort: RestaurantSort;
 
-      // All: 검색
+      // All: 필터
       food?: string;
       tags?: string[];
       region?: string;
+
+      // Admin: 필터
+      isPublished?: boolean;
+      dataStatus?: RestaurantDataStatus;
+
+      // All: 검색
       q?: string;
     };
 

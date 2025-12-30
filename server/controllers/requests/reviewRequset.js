@@ -23,7 +23,7 @@ function parseTags(raw) {
   return tags.length ? tags : undefined;
 }
 
-/** 목록 조회 filter
+/** 목록 조회 filter (page/limit/sort)
  * @param {Request} req
  * @returns {review.ListFilter} */
 function buildListFilter(req) {
@@ -47,12 +47,11 @@ function buildListFilter(req) {
     }) ?? DEFAULT_LIMIT;
 
   /** @type {review.ListFilter} */
-  const filter = { page, limit };
+  const filter = { page, limit, sort: REVIEW_SORT.RECENT };
 
   if (query.sort != null) {
     const s = String(query.sort).trim();
     if (Object.values(REVIEW_SORT).includes(s)) filter.sort = s;
-    else filter.sort = REVIEW_SORT.RECENT;
   }
 
   return filter;

@@ -1,7 +1,12 @@
 // controllers/restaurantController.js
 import { wrap, ok, created } from '../common/http.js';
 import { parseId } from '../common/check.js';
-import { buildListFilter, buildCreatePayload, buildUpdatePayload } from './requests/restaurantRequest.js';
+import {
+  buildPublicListFilter,
+  buildAdminListFilter,
+  buildCreatePayload,
+  buildUpdatePayload,
+} from './requests/restaurantRequest.js';
 import {
   readRestaurantList,
   readRestaurant,
@@ -14,8 +19,8 @@ import {
 
 /** GET /restaurants */
 export const list = wrap(async (req, res) => {
-  const filter = buildListFilter(req);
-  const result = await readRestaurantList(filter);
+  const filter = buildPublicListFilter(req);
+  const result = await readRestaurantList(filter, { mode: 'PUBLIC', include: { viewerLiked: true } });
   ok(res, result);
 });
 
@@ -30,15 +35,15 @@ export const read = wrap(async (req, res) => {
 
 /** GET /admin/restaurants */
 export const adminList = wrap(async (req, res) => {
-  const filter = buildListFilter(req);
-  const result = await readRestaurantList(filter, { mode: 'ADMIN' });
+  const filter = buildAdminListFilter(req);
+  const result = await readRestaurantList(filter, { mode: 'ADMIN', include: { viewerLiked: false } });
   ok(res, result);
 });
 
 /** GET /admin/restaurants/:restaurantId */
 export const adminRead = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
-  const result = await readRestaurant(restaurantId, { mode: 'ADMIN' });
+  const result = await readRestaurant(restaurantId, { mode: 'ADMIN', include: { viewerLiked: false } });
   ok(res, result);
 });
 

@@ -1,6 +1,6 @@
 // controllers/requests/restaurantRequest.js
 import { requireString, parseNumber, parseBoolean } from '../../common/check.js';
-import { RESTAURANT_DATA_STATUS } from '../../common/constants.js';
+import { RESTAURANT_DATA_STATUS, RESTAURANT_SORT } from '../../common/constants.js';
 
 /** @typedef {import('express').Request} Request */
 
@@ -23,10 +23,11 @@ function parseTags(raw) {
   return tags.length ? tags : undefined;
 }
 
-/** 목록 조회 filter
+/** 목록 조회 filter (page/limit/sort)
  * @param {Request} req
- * @returns {restaurant.ListFilter} */
-export function buildListFilter(req) {
+ * @returns {restaurant.ListFilter}
+ */
+function buildListFilter(req) {
   const query = req.query || {};
 
   const page =
@@ -47,8 +48,14 @@ export function buildListFilter(req) {
     }) ?? DEFAULT_LIMIT;
 
   /** @type {restaurant.ListFilter} */
-  const filter = { page, limit };
+  const filter = { page, limit, sort: RESTAURANT_SORT.POPULAR };
 
+  if (query.sort != null) {
+    const s = String(query.sort).trim();
+    if (Object.values(RESTAURANT_SORT).includes(s)) filter.sort = s;
+  }
+
+  // 기존 공개용에서 쓰던 필터들(food/tags/region/q)은 공용으로 유지
   for (const k of ['food', 'region', 'q']) {
     const s = query?.[k] == null ? '' : String(query[k]).trim();
     if (s) filter[k] = s;
@@ -56,6 +63,42 @@ export function buildListFilter(req) {
 
   const tags = parseTags(query.tags);
   if (tags) filter.tags = tags;
+
+  return filter;
+}
+
+/** 공개 목록 조회 filter
+ * @param {Request} req
+ * @returns {restaurant.ListFilter} */
+export function buildPublicListFilter(req) {
+  const query = req.query || {};
+  const filter = buildListFilter(req);
+  filter.sort = RESTAURANT_SORT.RECOMMEND;
+  return filter;
+}
+
+/** 관리자 목록 조회 filter
+ * @param {Request} req
+ * @returns {restaurant.ListFilter} */
+export function buildAdminListFilter(req) {
+  const query = req.query || {};
+  const filter = buildListFilter(req);
+  filter.sort = RESTAURANT_SORT.RECENT;
+
+  if (query.sort != null) {
+    const s = String(query.sort).trim();
+    if (Object.values(RESTAURANT_SORT).includes(s)) filter.sort = s;
+  }
+
+  if (query.isPublished != null) {
+    const v = parseBoolean(query.isPublished, '공개 여부', { nullable: true });
+    if (v !== null) payload.isPublished = v;
+  }
+
+  if (query.dataStatus != null) {
+    const s = String(query.dataStatus).trim();
+    if (Object.values(RESTAURANT_DATA_STATUS).includes(s)) payload.dataStatus = s;
+  }
 
   return filter;
 }
