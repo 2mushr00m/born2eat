@@ -1,6 +1,7 @@
 // controllers/requests/userRequest.js
 import { requireString, requireStringNoTrim } from '../../common/check.js';
 import { toFilePath } from '../../middleware/upload.js';
+import { AppError, ERR } from '../../common/error.js';
 
 /** @typedef {import('express').Request} Request */
 
