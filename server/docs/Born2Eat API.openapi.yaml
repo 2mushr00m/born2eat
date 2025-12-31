@@ -613,8 +613,8 @@ paths:
                 - currentPassword
                 - newPassword
             example:
-              currentPassword: test
-              newPassword: test-new
+              currentPassword: test-new
+              newPassword: test
         required: true
       responses:
         '200':
@@ -826,7 +826,7 @@ paths:
           $ref: '#/components/responses/Internal'
           description: ''
       security: []
-  /restaurants/:
+  /restaurants:
     get:
       summary: 음식점 목록
       deprecated: false
@@ -853,6 +853,32 @@ paths:
           required: false
           schema:
             type: integer
+        - name: food
+          in: query
+          description: 음식 태그
+          required: false
+          example: korean
+          schema:
+            type: string
+        - name: tags
+          in: query
+          description: 태그
+          required: false
+          example: special-day,honbap
+          schema:
+            type: string
+        - name: region
+          in: query
+          description: 법정동코드 10자리
+          required: false
+          schema:
+            type: string
+        - name: q
+          in: query
+          description: 검색어 (이름, 주소, 대표메뉴, 분류)
+          required: false
+          schema:
+            type: string
         - name: Set-Cookie
           in: header
           description: ''
@@ -909,9 +935,9 @@ paths:
           in: path
           description: ''
           required: true
-          example: '1'
+          example: 1
           schema:
-            type: string
+            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -959,9 +985,9 @@ paths:
           in: path
           description: ''
           required: true
-          example: '1'
+          example: 1
           schema:
-            type: string
+            type: integer
         - name: page
           in: query
           description: 페이지
@@ -1118,6 +1144,95 @@ paths:
           $ref: '#/components/responses/Internal'
           description: ''
       security: []
+  /restaurants/{restaurantId}/like:
+    post:
+      summary: 음식점 좋아요
+      deprecated: false
+      description: ''
+      tags:
+        - Restaurants
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: restaurantId
+          in: path
+          description: ''
+          required: true
+          example: 1
+          schema:
+            type: integer
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    default: true
+                    description: 성공 여부
+                required:
+                  - success
+          headers: {}
+      security: []
+    delete:
+      summary: 음식점 좋아요 취소
+      deprecated: false
+      description: ''
+      tags:
+        - Restaurants
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: restaurantId
+          in: path
+          description: ''
+          required: true
+          example: 1
+          schema:
+            type: integer
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    default: true
+                    description: 성공 여부
+                required:
+                  - success
+          headers: {}
+      security: []
   /reviews/{reviewId}:
     patch:
       summary: 리뷰 수정
@@ -1166,9 +1281,9 @@ paths:
           in: path
           description: ''
           required: true
-          example: ''
+          example: 0
           schema:
-            type: string
+            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -1283,9 +1398,9 @@ paths:
           in: path
           description: ''
           required: true
-          example: ''
+          example: 5
           schema:
-            type: string
+            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -1300,6 +1415,93 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseSuccess'
+          headers: {}
+      security: []
+  /reviews/{reviewId}/like:
+    post:
+      summary: 리뷰 좋아요
+      deprecated: false
+      description: ''
+      tags:
+        - Reviews
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: reviewId
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: integer
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    default: true
+                    description: 성공 여부
+                required:
+                  - success
+          headers: {}
+      security: []
+    delete:
+      summary: 리뷰 좋아요 취소
+      deprecated: false
+      description: ''
+      tags:
+        - Reviews
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: reviewId
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: integer
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    default: true
+                    description: 성공 여부
+                required:
+                  - success
           headers: {}
       security: []
   /admin/inquiries:
@@ -1466,9 +1668,9 @@ paths:
           in: path
           description: ''
           required: true
-          example: '15'
+          example: 15
           schema:
-            type: string
+            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -1516,9 +1718,9 @@ paths:
           in: path
           description: ''
           required: true
-          example: '15'
+          example: 15
           schema:
-            type: string
+            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -1574,6 +1776,75 @@ paths:
           schema:
             type: string
             default: '{{born2eat.sid}}'
+        - name: page
+          in: query
+          description: 페이지
+          required: false
+          example: 0
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: 한 페이지당 개수
+          required: false
+          example: 0
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          description: 정렬 순서
+          required: false
+          schema:
+            type: string
+            enum:
+              - recent
+              - popular
+              - recommend
+            default: recent
+        - name: food
+          in: query
+          description: '필터: 음식 태그'
+          required: false
+          example: korean
+          schema:
+            type: string
+        - name: tags
+          in: query
+          description: '필터: 태그'
+          required: false
+          example: special-day,honbap
+          schema:
+            type: string
+        - name: region
+          in: query
+          description: '필터: 법정동코드 10자리'
+          required: false
+          example: ''
+          schema:
+            type: string
+        - name: isPublished
+          in: query
+          description: '필터: 공개 여부'
+          required: false
+          schema:
+            type: boolean
+        - name: dataStatus
+          in: query
+          description: '필터: 데이터 품질 상태'
+          required: false
+          schema:
+            type: string
+            enum:
+              - RAW
+              - BASIC
+              - VERIFIED
+        - name: q
+          in: query
+          description: 검색어 (이름, 주소, 대표메뉴, 분류)
+          required: false
+          example: ''
+          schema:
+            type: string
         - name: Set-Cookie
           in: header
           description: ''
@@ -1651,7 +1922,7 @@ paths:
           $ref: '#/components/responses/Internal'
           description: ''
       security: []
-  /admin/restaurants/{restaurantsId}:
+  /admin/restaurants/{restaurantId}:
     get:
       summary: 음식점 상세보기
       deprecated: false
@@ -1666,13 +1937,13 @@ paths:
           schema:
             type: string
             default: '{{born2eat.sid}}'
-        - name: restaurantsId
+        - name: restaurantId
           in: path
           description: ''
           required: true
-          example: ''
+          example: 1
           schema:
-            type: string
+            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -1701,6 +1972,7 @@ paths:
           $ref: '#/components/responses/Internal'
           description: ''
       security: []
+  /admin/restaurants/{restaurantsId}:
     patch:
       summary: 음식점 수정
       deprecated: false
@@ -1719,9 +1991,9 @@ paths:
           in: path
           description: ''
           required: true
-          example: ''
+          example: 0
           schema:
-            type: string
+            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -1776,9 +2048,9 @@ paths:
           in: path
           description: ''
           required: true
-          example: ''
+          example: 0
           schema:
-            type: string
+            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -1914,7 +2186,7 @@ paths:
     patch:
       summary: 리뷰 숨기기
       deprecated: false
-      description: hard delete 대신 is_visible=0 처리
+      description: is_visible=0 처리, 음식점의 별점 & 리뷰 개수 집계 제거
       tags:
         - Admin
       parameters:
@@ -1929,8 +2201,9 @@ paths:
           in: path
           description: ''
           required: true
+          example: 2
           schema:
-            type: string
+            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -1946,7 +2219,12 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/ResponseSuccess'
-                  - $ref: '#/components/schemas/Id'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/Id'
+                    required:
+                      - result
           headers: {}
         '500':
           $ref: '#/components/responses/Internal'
@@ -1956,7 +2234,7 @@ paths:
     patch:
       summary: 리뷰 보이기
       deprecated: false
-      description: is_visible=1 처리
+      description: is_visible=1 처리, 음식점의 별점 & 리뷰 개수 집계
       tags:
         - Admin
       parameters:
@@ -1971,8 +2249,9 @@ paths:
           in: path
           description: ''
           required: true
+          example: 2
           schema:
-            type: string
+            type: integer
         - name: Set-Cookie
           in: header
           description: ''
@@ -1988,7 +2267,12 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/ResponseSuccess'
-                  - $ref: '#/components/schemas/Id'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/Id'
+                    required:
+                      - result
           headers: {}
         '500':
           $ref: '#/components/responses/Internal'
@@ -2420,7 +2704,7 @@ components:
                 description: 방송 제목
               episodeNo:
                 type:
-                  - string
+                  - integer
                   - 'null'
                 description: 방송 회차
               airedAt:
@@ -2433,16 +2717,24 @@ components:
                 type: object
                 properties:
                   NETFLIX:
-                    type: string
+                    type:
+                      - string
+                      - 'null'
                     description: 넷플릭스 URL
                   TVING:
-                    type: string
+                    type:
+                      - string
+                      - 'null'
                     description: 티빙 URL
                   WAVVE:
-                    type: string
+                    type:
+                      - string
+                      - 'null'
                     description: 웨이브 URL
                   WATCHA:
-                    type: string
+                    type:
+                      - string
+                      - 'null'
                     description: 왓챠 URL
                 description: 방송 OTT
               youtube:
