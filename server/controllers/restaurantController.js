@@ -19,15 +19,17 @@ import {
 
 /** GET /restaurants */
 export const list = wrap(async (req, res) => {
+  const viewerId = req.user?.userId ?? null;
   const filter = buildPublicListFilter(req);
-  const result = await readRestaurantList(filter, { mode: 'PUBLIC', include: { viewerLiked: true } });
+  const result = await readRestaurantList(filter, { mode: 'PUBLIC', viewerId, include: { viewerLiked: true } });
   ok(res, result);
 });
 
 /** GET /restaurants/:restaurantId */
 export const read = wrap(async (req, res) => {
+  const viewerId = req.user?.userId ?? null;
   const restaurantId = parseId(req.params?.restaurantId);
-  const result = await readRestaurant(restaurantId);
+  const result = await readRestaurant(restaurantId, { mode: 'PUBLIC', viewerId, include: { viewerLiked: true } });
   ok(res, result);
 });
 

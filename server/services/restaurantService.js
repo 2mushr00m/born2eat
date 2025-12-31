@@ -2,7 +2,7 @@
 import db from '../repository/db.js';
 import logger from '../common/logger.js';
 import { AppError, ERR } from '../common/error.js';
-import { BROADCAST_OTT, RESTAURANT_PHOTO_SOURCE, RESTAURANT_PHOTO_TYPE } from '../common/constants.js';
+import { BROADCAST_OTT, RESTAURANT_PHOTO_SOURCE, RESTAURANT_PHOTO_TYPE, RESTAURANT_SORT } from '../common/constants.js';
 
 /** 평균평점 기반 정렬 (리뷰수 적을 때의 왜곡 완화)
  * - score = (v/(v+m))*R + (m/(v+m))*C  (Bayesian average)
@@ -121,14 +121,44 @@ async function resolveFoodTagId(foodCode) {
   }
 }
 
+/** viewerLiked attach
+ * @param {import('mysql2/promise').PoolConnection} conn
+ * @param {restaurant.Item[]} items
+ * @param {number[]} restaurantIds
+ * @param {number|null|undefined} viewerId
+ * @returns {Promise<void>}
+ */
+async function attachViewerLiked(conn, items, restaurantIds, viewerId) {
+  for (const it of items) it.viewerLiked = false;
+  if (viewerId == null) return;
+  if (!restaurantIds?.length) return;
+
+  const placeholders = restaurantIds.map((_, i) => `:r${i}`).join(', ');
+  const p = { viewerId };
+  restaurantIds.forEach((id, i) => (p[`r${i}`] = id));
+
+  const [rows] = await conn.execute(
+    `
+    SELECT rl.restaurant_id AS restaurantId
+    FROM restaurant_like rl
+    WHERE rl.user_id = :viewerId
+      AND rl.restaurant_id IN (${placeholders})
+    `,
+    p,
+  );
+
+  const likedSet = new Set((rows || []).map((x) => Number(x.restaurantId)));
+  for (const it of items) if (likedSet.has(Number(it.restaurantId))) it.viewerLiked = true;
+}
+
 /** 음식점 목록 조회
  * @param {restaurant.ListFilter} filter
- * @param {{ mode?: 'PUBLIC' | 'ADMIN', include?: { viewerLiked?: boolean } }} [opt]
+ * @param {{ mode?: 'PUBLIC' | 'ADMIN', viewerId?: number, include?: { viewerLiked?: boolean } }} [opt]
  * @returns {Promise<restaurant.List>}
  */
 export async function readRestaurantList(filter, opt = {}) {
-  const { page, limit, sort, food, tags, region, q } = filter;
-  const { mode = 'PUBLIC', include } = opt;
+  const { page, limit, sort, food, tags, region, isPublished, dataStatus, q } = filter;
+  const { mode = 'PUBLIC', viewerId, include } = opt;
   const isAdmin = mode === 'ADMIN';
   const offset = (page - 1) * limit;
 
@@ -142,7 +172,33 @@ export async function readRestaurantList(filter, opt = {}) {
     const join = [];
     const having = [];
 
+    // sort별 ORDER BY
+    // - RECENT: 최신순(id DESC)
+    // - POPULAR: 좋아요순(like_count DESC) -> 이후 RECOMMEND와 동일
+    // - RECOMMEND: 평균평점 기반(score DESC) -> 이후 RECENT와 동일
+    let orderBy = `r.restaurant_id DESC`;
+    if (sort === RESTAURANT_SORT.RECOMMEND) {
+      orderBy = `score DESC, r.restaurant_id DESC`;
+    } else if (sort === RESTAURANT_SORT.POPULAR) {
+      orderBy = `likeCount DESC, score DESC, r.restaurant_id DESC`;
+    } else if (sort === RESTAURANT_SORT.RECENT) {
+      orderBy = `r.restaurant_id DESC`;
+    }
+
+    // PUBLIC은 공개만
     if (!isAdmin) where.push('r.is_published = 1');
+
+    // ADMIN 전용 필터
+    if (isAdmin) {
+      if (isPublished != null) {
+        where.push('r.is_published = :isPublished');
+        params.isPublished = isPublished ? 1 : 0;
+      }
+      if (dataStatus != null) {
+        where.push('r.data_status = :dataStatus');
+        params.dataStatus = dataStatus;
+      }
+    }
 
     join.push(`LEFT JOIN tag tf ON tf.tag_id = r.food_tag_id`);
     join.push(`LEFT JOIN region rg2 ON rg2.region_code = r.region_code`);
@@ -204,7 +260,7 @@ export async function readRestaurantList(filter, opt = {}) {
       params,
     );
 
-    const total = countRows?.length ? countRows.length : 0;
+    const total = useTagFilter ? (countRows?.length ?? 0) : Number(countRows?.[0]?.total ?? 0);
     if (total === 0) return { items: [], page, limit, total: 0 };
 
     // 2) items
@@ -213,6 +269,8 @@ export async function readRestaurantList(filter, opt = {}) {
       SELECT
         r.restaurant_id AS restaurantId,
         r.name,
+        r.is_published AS isPublishedInt,
+        r.data_status AS dataStatus,
         r.kakao_place_id AS kakaoPlaceId,
         r.main_food AS mainFood,
         r.address,
@@ -236,41 +294,49 @@ export async function readRestaurantList(filter, opt = {}) {
       WHERE ${where.join(' AND ')}
       ${useTagFilter ? 'GROUP BY r.restaurant_id' : ''}
       ${having.length ? `HAVING ${having.join(' AND ')}` : ''}
-      ORDER BY
-        score DESC,
-        reviewCount DESC,
-        likeCount DESC,
-        restaurantId DESC
-      LIMIT :limit OFFSET :offset
+      ORDER BY ${orderBy}
+      LIMIT ${limit} OFFSET ${offset}
       `,
-      { ...params, limit, offset },
+      params,
     );
 
     /** @type {restaurant.Item[]} */
-    const items = rows.map((row) => ({
-      restaurantId: row.restaurantId,
-      name: row.name,
-      kakaoPlaceId: row.kakaoPlaceId ?? null,
+    const items = rows.map((row) => {
+      /** @type {restaurant.Item} */
+      const it = {
+        restaurantId: row.restaurantId,
+        name: row.name,
+        kakaoPlaceId: row.kakaoPlaceId ?? null,
 
-      foodCategory: row.foodCategory ?? null,
-      mainFood: row.mainFood ?? null,
-      mainPhoto: null, // 2에서 진행
-      address: row.address ?? null,
+        foodCategory: row.foodCategory ?? null,
+        mainFood: row.mainFood ?? null,
+        mainPhoto: null, // 3에서 채움
+        address: row.address ?? null,
 
-      longitude: row.longitude != null ? Number(row.longitude) : null,
-      latitude: row.latitude != null ? Number(row.latitude) : null,
+        longitude: row.longitude != null ? Number(row.longitude) : null,
+        latitude: row.latitude != null ? Number(row.latitude) : null,
 
-      ratingSum: row.ratingSum != null ? Number(row.ratingSum) : 0,
-      reviewCount: row.reviewCount != null ? Number(row.reviewCount) : 0,
-      likeCount: row.likeCount != null ? Number(row.likeCount) : 0,
+        ratingSum: row.ratingSum != null ? Number(row.ratingSum) : 0,
+        reviewCount: row.reviewCount != null ? Number(row.reviewCount) : 0,
+        likeCount: row.likeCount != null ? Number(row.likeCount) : 0,
 
-      tags: [], // 3에서 진행
-      region: {
-        code: row.regionCode ?? null,
-        depth1: row.regionDepth1 ?? null,
-        depth2: row.regionDepth2 ?? null,
-      },
-    }));
+        tags: [], // 4에서 채움
+        region: {
+          code: row.regionCode ?? null,
+          depth1: row.regionDepth1 ?? null,
+          depth2: row.regionDepth2 ?? null,
+        },
+
+        ...(isAdmin
+          ? {
+              isPublished: row.isPublishedInt === 1,
+              dataStatus: row.dataStatus,
+            }
+          : {}),
+      };
+
+      return it;
+    });
 
     // 3) 대표사진
     const ids = items.map((it) => it.restaurantId);
@@ -304,8 +370,8 @@ export async function readRestaurantList(filter, opt = {}) {
     const [tagRows] = await conn.execute(
       `
       SELECT rt.restaurant_id AS restaurantId, t.name
-        FROM restaurant_tag rt
-        JOIN tag t ON t.tag_id = rt.tag_id
+      FROM restaurant_tag rt
+      JOIN tag t ON t.tag_id = rt.tag_id
       WHERE rt.restaurant_id IN (${idPlaceholders})
         AND t.type='tag'
       `,
@@ -319,6 +385,10 @@ export async function readRestaurantList(filter, opt = {}) {
       tagsById.set(r.restaurantId, arr);
     }
     for (const it of items) it.tags = tagsById.get(it.restaurantId) ?? [];
+
+    if (include?.viewerLiked) {
+      await attachViewerLiked(conn, items, ids, viewerId);
+    }
 
     return { items, page, limit, total };
   } catch (err) {
@@ -334,11 +404,11 @@ export async function readRestaurantList(filter, opt = {}) {
 
 /** 음식점 상세 조회
  * @param {number} restaurantId
- * @param {{ mode?: 'PUBLIC' | 'ADMIN' }} [opt]
+ * @param {{ mode?: 'PUBLIC' | 'ADMIN', viewerId?: number, include?: { viewerLiked?: boolean } }} [opt]
  * @returns {Promise<restaurant.Detail>}
  */
 export async function readRestaurant(restaurantId, opt = {}) {
-  const { mode = 'PUBLIC' } = opt;
+  const { mode = 'PUBLIC', viewerId, include } = opt;
   const isAdmin = mode === 'ADMIN';
   const conn = await db.getConnection();
 
@@ -349,6 +419,7 @@ export async function readRestaurant(restaurantId, opt = {}) {
       SELECT
         r.restaurant_id AS restaurantId,
         r.name,
+        r.description,
         r.kakao_place_id AS kakaoPlaceId,
         r.main_food AS mainFood,
         r.phone,
@@ -358,6 +429,7 @@ export async function readRestaurant(restaurantId, opt = {}) {
         r.rating_sum AS ratingSum,
         r.review_count AS reviewCount,
         r.is_published AS isPublishedInt,
+        r.data_status AS dataStatus,
         r.region_code AS regionCode,
         tf.name AS foodCategory,
         COALESCE(rl.like_count, 0) AS likeCount,
@@ -384,8 +456,9 @@ export async function readRestaurant(restaurantId, opt = {}) {
 
     /** @type {restaurant.Detail} */
     const detail = {
-      restaurantId: row.restaurantId,
+      restaurantId: Number(row.restaurantId),
       name: row.name,
+      description: row.description ?? null,
       kakaoPlaceId: row.kakaoPlaceId ?? null,
 
       foodCategory: row.foodCategory ?? null,
@@ -409,6 +482,13 @@ export async function readRestaurant(restaurantId, opt = {}) {
       tags: [], // 2에서 채움
       photos: { main: [], menuBoard: [], etc: [] }, // 3에서 채움
       broadcasts: [], // 4에서 채움
+
+      ...(isAdmin
+        ? {
+            isPublished: row.isPublishedInt === 1,
+            dataStatus: row.dataStatus,
+          }
+        : {}),
     };
 
     // 2) 태그 목록
@@ -447,6 +527,7 @@ export async function readRestaurant(restaurantId, opt = {}) {
     );
 
     for (const p of photoRows ?? []) {
+      /** @type {restaurant.Photo} */
       const photo = {
         filePath: p.filePath,
         caption: p.caption ?? null,
@@ -495,7 +576,7 @@ export async function readRestaurant(restaurantId, opt = {}) {
       );
 
       const ottByBid = new Map();
-      for (const bid of broadcastIds) ottByBid.set(bid, { NETFLIX: null, TVING: null, WAVVE: null, etc: null });
+      for (const bid of broadcastIds) ottByBid.set(bid, { NETFLIX: null, TVING: null, WAVVE: null, WATCHA: null });
 
       for (const o of ottRows ?? []) {
         const ott = ottByBid.get(o.broadcastId);
@@ -504,7 +585,7 @@ export async function readRestaurant(restaurantId, opt = {}) {
         if (o.platform === BROADCAST_OTT.NETFLIX) ott.NETFLIX = o.ottUrl;
         else if (o.platform === BROADCAST_OTT.TVING) ott.TVING = o.ottUrl;
         else if (o.platform === BROADCAST_OTT.WAVVE) ott.WAVVE = o.ottUrl;
-        else ott.WATCHA = o.ottUrl;
+        else if (o.platform === BROADCAST_OTT.WATCHA) ott.WATCHA = o.ottUrl;
       }
 
       // 4-2) YouTube: (broadcastId, episodeNo) 기준으로 모으기
@@ -533,6 +614,10 @@ export async function readRestaurant(restaurantId, opt = {}) {
         ott: ottByBid.get(br.broadcastId) ?? { NETFLIX: null, TVING: null, WAVVE: null, etc: null },
         youtube: ytByKey.get(`${br.broadcastId}:${br.episodeNo}`) ?? [],
       }));
+    }
+
+    if (include?.viewerLiked) {
+      await attachViewerLiked(conn, [detail], [restaurantId], viewerId);
     }
 
     return detail;

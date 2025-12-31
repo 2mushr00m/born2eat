@@ -846,19 +846,19 @@ export async function showReview(reviewId, opt) {
     const rating = Number(it.rating) || 0;
     const wasVisible = Number(it.isVisible) === 1;
 
-    // 이미 숨김이면 그대로 종료 (집계도 건드리지 않음)
-    if (!wasVisible) {
+    // 이미 보이기면 그대로 종료 (집계도 건드리지 않음)
+    if (wasVisible) {
       await conn.commit();
       return;
     }
 
-    // 2) review 숨김 처리 (is_visible=0)
+    // 2) review 보이기 처리 (is_visible=1)
     const [uRes] = await conn.execute(
       `
       UPDATE review
-      SET is_visible = 0
+      SET is_visible = 1
       WHERE review_id = :reviewId
-        AND is_visible = 1
+        AND is_visible = 0
       `,
       { reviewId },
     );
@@ -869,7 +869,7 @@ export async function showReview(reviewId, opt) {
         data: { targetId: reviewId, extra: { actorId } },
       });
 
-    // 3) restaurant 집계(증분 감소)
+    // 3) restaurant 집계(증분 증가)
     await conn.execute(
       `
       UPDATE restaurant

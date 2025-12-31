@@ -23,12 +23,14 @@ function parseTags(raw) {
   return tags.length ? tags : undefined;
 }
 
-/** 목록 조회 filter (page/limit/sort)
+/** 목록 조회 filter
  * @param {Request} req
+ * @param {{ mode?: 'PUBLIC' | 'ADMIN' }} [opt]
  * @returns {restaurant.ListFilter}
  */
-function buildListFilter(req) {
+function buildListFilter(req, opt) {
   const query = req.query || {};
+  const mode = opt?.mode ?? 'PUBLIC';
 
   const page =
     parseNumber(query.page, 'page', {
@@ -55,7 +57,15 @@ function buildListFilter(req) {
     if (Object.values(RESTAURANT_SORT).includes(s)) filter.sort = s;
   }
 
-  // 기존 공개용에서 쓰던 필터들(food/tags/region/q)은 공용으로 유지
+  if (mode === 'ADMIN') {
+    const s = query.sort == null ? '' : String(query.sort).trim();
+    if (s && Object.values(RESTAURANT_SORT).includes(s)) filter.sort = s;
+    else if (RESTAURANT_SORT.RECENT) filter.sort = RESTAURANT_SORT.RECENT;
+  } else {
+    // PUBLIC은 항상 인기/추천순 고정
+    filter.sort = RESTAURANT_SORT.POPULAR;
+  }
+
   for (const k of ['food', 'region', 'q']) {
     const s = query?.[k] == null ? '' : String(query[k]).trim();
     if (s) filter[k] = s;
@@ -64,6 +74,19 @@ function buildListFilter(req) {
   const tags = parseTags(query.tags);
   if (tags) filter.tags = tags;
 
+  // admin 전용 필터
+  if (mode === 'ADMIN') {
+    if (query.isPublished != null) {
+      const v = parseBoolean(query.isPublished, 'isPublished', { nullable: true });
+      if (v != null) filter.isPublished = v;
+    }
+
+    if (query.dataStatus != null) {
+      const s = String(query.dataStatus).trim();
+      if (Object.values(RESTAURANT_DATA_STATUS).includes(s)) filter.dataStatus = s;
+    }
+  }
+
   return filter;
 }
 
@@ -71,36 +94,14 @@ function buildListFilter(req) {
  * @param {Request} req
  * @returns {restaurant.ListFilter} */
 export function buildPublicListFilter(req) {
-  const query = req.query || {};
-  const filter = buildListFilter(req);
-  filter.sort = RESTAURANT_SORT.RECOMMEND;
-  return filter;
+  return buildListFilter(req, { mode: 'PUBLIC' });
 }
 
 /** 관리자 목록 조회 filter
  * @param {Request} req
  * @returns {restaurant.ListFilter} */
 export function buildAdminListFilter(req) {
-  const query = req.query || {};
-  const filter = buildListFilter(req);
-  filter.sort = RESTAURANT_SORT.RECENT;
-
-  if (query.sort != null) {
-    const s = String(query.sort).trim();
-    if (Object.values(RESTAURANT_SORT).includes(s)) filter.sort = s;
-  }
-
-  if (query.isPublished != null) {
-    const v = parseBoolean(query.isPublished, '공개 여부', { nullable: true });
-    if (v !== null) payload.isPublished = v;
-  }
-
-  if (query.dataStatus != null) {
-    const s = String(query.dataStatus).trim();
-    if (Object.values(RESTAURANT_DATA_STATUS).includes(s)) payload.dataStatus = s;
-  }
-
-  return filter;
+  return buildListFilter(req, { mode: 'ADMIN' });
 }
 
 /** 생성 payload
@@ -114,7 +115,7 @@ export function buildCreatePayload(req) {
     name: requireString(body.name, '가게명').trim(),
   };
 
-  for (const k of ['kakaoPlaceId', 'regionCode', 'foodTagCode', 'mainFood', 'phone', 'address']) {
+  for (const k of ['kakaoPlaceId', 'description', 'regionCode', 'foodTagCode', 'mainFood', 'phone', 'address']) {
     const s = body?.[k] == null ? '' : String(body[k]).trim();
     if (s) payload[k] = s;
   }
@@ -147,7 +148,7 @@ export function buildUpdatePayload(req) {
 
   if ('name' in body) payload.name = requireString(body.name, '가게명').trim();
 
-  for (const k of ['kakaoPlaceId', 'regionCode', 'foodTagCode', 'mainFood', 'phone', 'address']) {
+  for (const k of ['kakaoPlaceId', 'description', 'regionCode', 'foodTagCode', 'mainFood', 'phone', 'address']) {
     if (k in body) {
       const v = body[k];
       payload[k] = v == null ? null : String(v).trim();

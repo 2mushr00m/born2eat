@@ -18,7 +18,7 @@ declare global {
       isPublished?: boolean;
       dataStatus?: RestaurantDataStatus;
 
-      // All: 검색
+      // All: 검색 (이름, 주소, 대표메뉴, 분류)
       q?: string;
     };
 
@@ -39,7 +39,7 @@ declare global {
 
     type UpdatePayload = {
       name?: string;
-      description?: string;
+      description?: string | null;
       kakaoPlaceId?: string | null;
       regionCode?: string | null;
       foodTagCode?: string | null;
