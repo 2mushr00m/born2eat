@@ -671,15 +671,6 @@ paths:
           required: false
           schema:
             type: integer
-        - name: status
-          in: query
-          description: 상태
-          required: false
-          schema:
-            type: string
-            enum:
-              - PENDING
-              - ANSWERED
         - name: Set-Cookie
           in: header
           description: ''
@@ -755,7 +746,7 @@ paths:
     get:
       summary: 내 리뷰 목록
       deprecated: false
-      description: ''
+      description: '정렬: 최신순'
       tags:
         - Me
       parameters:
@@ -778,16 +769,6 @@ paths:
           required: false
           schema:
             type: integer
-        - name: sort
-          in: query
-          description: 정렬 순서
-          required: false
-          schema:
-            type: string
-            enum:
-              - recent
-              - like
-              - rating
         - name: Set-Cookie
           in: header
           description: ''
@@ -826,11 +807,73 @@ paths:
           $ref: '#/components/responses/Internal'
           description: ''
       security: []
+  /me/likes:
+    get:
+      summary: 내가 좋아요한 음식점 목록
+      deprecated: false
+      description: ''
+      tags:
+        - Me
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: page
+          in: query
+          description: 페이지
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: 한 페이지당 개수
+          required: false
+          schema:
+            type: integer
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    default: true
+                    description: 성공 여부
+                  result:
+                    allOf:
+                      - type: object
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/RestaurantLiked'
+                        required:
+                          - items
+                      - $ref: '#/components/schemas/List'
+                required:
+                  - result
+                  - success
+          headers: {}
+      security: []
   /restaurants:
     get:
       summary: 음식점 목록
       deprecated: false
-      description: ''
+      description: '정렬: 추천순(리뷰 기반)'
       tags:
         - Restaurants
       parameters:
@@ -1767,7 +1810,7 @@ paths:
     get:
       summary: 음식점 목록
       deprecated: false
-      description: ''
+      description: '기본 정렬: 최신순'
       tags:
         - Admin
       parameters:
@@ -2868,6 +2911,48 @@ components:
       required:
         - isPublished
         - dataStatus
+    RestaurantLiked:
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          description: 음식점 PK
+        name:
+          type: string
+          description: 음식점명
+        mainPhoto:
+          type:
+            - string
+            - 'null'
+          description: 메인사진 경로
+        region:
+          type: object
+          properties:
+            code:
+              type:
+                - string
+                - 'null'
+              description: 법정동 코드(10자리)
+            depth1:
+              type:
+                - string
+                - 'null'
+              description: 시/도
+            depth2:
+              type:
+                - string
+                - 'null'
+              description: 시/군/구
+          required:
+            - code
+            - depth1
+            - depth2
+          description: 지역
+      required:
+        - restaurantId
+        - name
+        - mainPhoto
+        - region
     ResponseSuccess:
       type: object
       properties:

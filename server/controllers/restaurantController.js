@@ -4,6 +4,7 @@ import { parseId } from '../common/check.js';
 import {
   buildPublicListFilter,
   buildAdminListFilter,
+  buildMyLikesFilter,
   buildCreatePayload,
   buildUpdatePayload,
 } from './requests/restaurantRequest.js';
@@ -15,6 +16,7 @@ import {
   deleteRestaurant,
   likeRestaurant,
   unlikeRestaurant,
+  readLikedRestaurantList,
 } from '../services/restaurantService.js';
 
 /* ============== PUBLIC ============== */
@@ -36,6 +38,14 @@ export const read = wrap(async (req, res) => {
 });
 
 /* ============== USER ============== */
+
+/** GET /me/likes */
+export const likedList = wrap(async (req, res) => {
+  const userId = req.user?.userId ?? null;
+  const filter = buildMyLikesFilter(req);
+  const result = await readLikedRestaurantList(filter, userId);
+  ok(res, result);
+});
 
 /** POST /restaurants/:restaurantId/like */
 export const like = wrap(async (req, res) => {

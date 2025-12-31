@@ -772,6 +772,114 @@ export async function deleteRestaurant(restaurantId) {
   }
 }
 
+/** 내가 좋아요한 음식점 목록
+ * @param {number} userId
+ * @param {{limit: number, page: number}} filter
+ * @returns {Promise<restaurant.LikedList>}
+ */
+export async function readLikedRestaurantList(filter, userId) {
+  if (userId == null) throw new AppError(ERR.UNAUTHORIZED, { message: '로그인이 필요합니다.' });
+  const { page, limit } = filter ?? {};
+  const offset = (page - 1) * limit;
+
+  const conn = await db.getConnection();
+
+  try {
+    // 1) total
+    const [cntRows] = await conn.execute(
+      `
+      SELECT COUNT(*) AS total
+      FROM restaurant_like rl
+      JOIN restaurant r ON r.restaurant_id = rl.restaurant_id
+      WHERE rl.user_id = :userId
+        AND r.is_published = 1
+      `,
+      { userId },
+    );
+
+    const total = Number(cntRows?.[0]?.total ?? 0);
+    if (total === 0) return { items: [], page, limit, total: 0 };
+
+    // 2) items (region 포함)
+    const [rows] = await conn.execute(
+      `
+      SELECT
+        r.restaurant_id AS restaurantId,
+        r.name,
+        r.region_code AS regionCode,
+        COALESCE(rg1.name, rg2.name) AS regionDepth1,
+        CASE WHEN rg1.name IS NOT NULL THEN rg2.name ELSE NULL END AS regionDepth2
+      FROM restaurant_like rl
+      JOIN restaurant r ON r.restaurant_id = rl.restaurant_id
+      LEFT JOIN region rg2 ON rg2.region_code = r.region_code
+      LEFT JOIN region rg1 ON rg1.region_code = rg2.parent_code
+      WHERE rl.user_id = :userId
+        AND r.is_published = 1
+      ORDER BY rl.created_at DESC, r.restaurant_id DESC
+      LIMIT ${limit} OFFSET ${offset}
+      `,
+      { userId },
+    );
+
+    /** @type {restaurant.LikedList['items']} */
+    const items = (rows ?? []).map((row) => ({
+      restaurantId: Number(row.restaurantId),
+      name: row.name,
+      mainPhoto: null,
+      region: {
+        code: row.regionCode ?? null,
+        depth1: row.regionDepth1 ?? null,
+        depth2: row.regionDepth2 ?? null,
+      },
+    }));
+
+    // 3) mainPhoto attach (MAIN 1장)
+    const ids = items.map((it) => it.restaurantId);
+    if (!ids.length) return { items: [], page, limit, total };
+
+    const placeholders = ids.map((_, i) => `:id_${i}`).join(', ');
+    const idParams = ids.reduce((acc, id, i) => {
+      acc[`id_${i}`] = id;
+      return acc;
+    }, {});
+
+    const [photoRows] = await conn.execute(
+      `
+      SELECT restaurant_id AS restaurantId, file_path AS filePath
+      FROM (
+        SELECT
+          restaurant_id,
+          file_path,
+          ROW_NUMBER() OVER (
+            PARTITION BY restaurant_id
+            ORDER BY sort_order ASC, created_at DESC
+          ) rn
+        FROM restaurant_photo
+        WHERE photo_type = 'MAIN'
+          AND restaurant_id IN (${placeholders})
+      ) x
+      WHERE rn = 1
+      `,
+      idParams,
+    );
+
+    const photoById = new Map((photoRows ?? []).map((r) => [Number(r.restaurantId), r.filePath]));
+    for (const it of items) it.mainPhoto = photoById.get(it.restaurantId) ?? null;
+
+    return { items, page, limit, total };
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+
+    throw new AppError(ERR.DB, {
+      message: '내가 좋아요한 음식점 목록 조회 중 오류가 발생했습니다.',
+      data: { keys: ['userId'], dbCode: err?.code, extra: { userId } },
+      cause: err,
+    });
+  } finally {
+    conn.release();
+  }
+}
+
 /** 음식점 좋아요
  * @param {number} restaurantId
  * @param {number} userId

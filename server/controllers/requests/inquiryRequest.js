@@ -36,11 +36,6 @@ function buildListFilter(req) {
   /** @type {inquiry.ListFilter} */
   const filter = { page, limit };
 
-  if (query.status != null) {
-    const s = String(query.status).trim();
-    if (Object.values(INQUIRY_STATUS).includes(s)) filter.status = s;
-  }
-
   return filter;
 }
 
@@ -50,6 +45,11 @@ function buildListFilter(req) {
 export function buildAdminListFilter(req) {
   const filter = buildListFilter(req);
   const query = req.query || {};
+
+  if (query.status != null) {
+    const s = String(query.status).trim();
+    if (Object.values(INQUIRY_STATUS).includes(s)) filter.status = s;
+  }
 
   if (query.type != null) {
     const s = String(query.type).trim();

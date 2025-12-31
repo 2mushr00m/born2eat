@@ -49,11 +49,6 @@ function buildListFilter(req) {
   /** @type {review.ListFilter} */
   const filter = { page, limit, sort: REVIEW_SORT.RECENT };
 
-  if (query.sort != null) {
-    const s = String(query.sort).trim();
-    if (Object.values(REVIEW_SORT).includes(s)) filter.sort = s;
-  }
-
   return filter;
 }
 
@@ -62,6 +57,13 @@ function buildListFilter(req) {
  * @returns {review.ListFilter} */
 export function buildPublicListFilter(req) {
   const filter = buildListFilter(req);
+
+  filter.sort = REVIEW_SORT.POPULAR;
+  if (query.sort != null) {
+    const s = String(query.sort).trim();
+    if (Object.values(REVIEW_SORT).includes(s)) filter.sort = s;
+  }
+
   const restaurantId = parseId(req.params?.restaurantId);
   filter.restaurantId = restaurantId;
   filter.isVisible = true;
@@ -83,6 +85,11 @@ export function buildMyListFilter(req) {
 export function buildAdminListFilter(req) {
   const filter = buildListFilter(req);
   const query = req?.query || {};
+
+  if (query.sort != null) {
+    const s = String(query.sort).trim();
+    if (Object.values(REVIEW_SORT).includes(s)) filter.sort = s;
+  }
 
   if (query.restaurantId != null) {
     const v = parseNumber(query.restaurantId, 'restaurantId', {

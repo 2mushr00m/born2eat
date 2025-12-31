@@ -8,6 +8,10 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
 
+const MY_LIKES_DEFAULT_PAGE = 1;
+const MY_LIKES_DEFAULT_LIMIT = 5;
+const MY_LIKES_MAX_LIMIT = 50;
+
 /** 내부 헬퍼: tags → tagList */
 function parseTags(raw) {
   if (raw == null) return undefined;
@@ -50,7 +54,7 @@ function buildListFilter(req, opt) {
     }) ?? DEFAULT_LIMIT;
 
   /** @type {restaurant.ListFilter} */
-  const filter = { page, limit, sort: RESTAURANT_SORT.POPULAR };
+  const filter = { page, limit, sort: RESTAURANT_SORT.RECENT };
 
   if (query.sort != null) {
     const s = String(query.sort).trim();
@@ -62,8 +66,7 @@ function buildListFilter(req, opt) {
     if (s && Object.values(RESTAURANT_SORT).includes(s)) filter.sort = s;
     else if (RESTAURANT_SORT.RECENT) filter.sort = RESTAURANT_SORT.RECENT;
   } else {
-    // PUBLIC은 항상 인기/추천순 고정
-    filter.sort = RESTAURANT_SORT.POPULAR;
+    filter.sort = RESTAURANT_SORT.RECOMMEND;
   }
 
   for (const k of ['food', 'region', 'q']) {
@@ -102,6 +105,33 @@ export function buildPublicListFilter(req) {
  * @returns {restaurant.ListFilter} */
 export function buildAdminListFilter(req) {
   return buildListFilter(req, { mode: 'ADMIN' });
+}
+
+/** 내가 좋아요한 목록 조회 filter
+ * @param {Request} req
+ * @returns {{limit: number, page: number}}
+ */
+export function buildMyLikesFilter(req) {
+  const query = req?.query ?? {};
+
+  const page =
+    parseNumber(query.page, 'page', {
+      integer: true,
+      positive: true,
+      nullable: true,
+      autoFix: true,
+    }) ?? MY_LIKES_DEFAULT_PAGE;
+
+  const limit =
+    parseNumber(query.limit, 'limit', {
+      integer: true,
+      positive: true,
+      nullable: true,
+      autoFix: true,
+      max: MY_LIKES_MAX_LIMIT,
+    }) ?? MY_LIKES_DEFAULT_LIMIT;
+
+  return { page, limit };
 }
 
 /** 생성 payload

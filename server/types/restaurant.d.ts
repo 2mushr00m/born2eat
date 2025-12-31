@@ -152,6 +152,18 @@ declare global {
       isPublished?: boolean;
       dataStatus?: RestaurantDataStatus;
     };
+
+    type LikedList = {
+      items: {
+        restaurantId: number;
+        name: string;
+        mainPhoto: string | null;
+        region: Region;
+      }[];
+      page: number;
+      limit: number;
+      total: number;
+    };
   }
 }
 
