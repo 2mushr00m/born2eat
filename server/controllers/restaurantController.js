@@ -13,9 +13,11 @@ import {
   createRestaurant,
   updateRestaurant,
   deleteRestaurant,
+  likeRestaurant,
+  unlikeRestaurant,
 } from '../services/restaurantService.js';
 
-/* ============== 공개용 ============== */
+/* ============== PUBLIC ============== */
 
 /** GET /restaurants */
 export const list = wrap(async (req, res) => {
@@ -33,7 +35,25 @@ export const read = wrap(async (req, res) => {
   ok(res, result);
 });
 
-/* ============== 관리자용 ============== */
+/* ============== USER ============== */
+
+/** POST /restaurants/:restaurantId/like */
+export const like = wrap(async (req, res) => {
+  const restaurantId = parseId(req.params?.restaurantId);
+  const userId = req.user?.userId ?? null;
+  await likeRestaurant(restaurantId, userId);
+  ok(res);
+});
+
+/** DELETE /restaurants/:restaurantId/like */
+export const unlike = wrap(async (req, res) => {
+  const restaurantId = parseId(req.params?.restaurantId);
+  const userId = req.user?.userId ?? null;
+  await unlikeRestaurant(restaurantId, userId);
+  ok(res);
+});
+
+/* ============== ADMIN ============== */
 
 /** GET /admin/restaurants */
 export const adminList = wrap(async (req, res) => {

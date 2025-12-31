@@ -71,6 +71,22 @@ export const myList = wrap(async (req, res) => {
   ok(res, result);
 });
 
+/** POST /reviews/:reviewId/like */
+export const like = wrap(async (req, res) => {
+  const reviewId = parseId(req.params?.reviewId);
+  const userId = req.user?.userId ?? null;
+  await likeReview(reviewId, userId);
+  ok(res);
+});
+
+/** DELETE /reviews/:reviewId/like */
+export const unlike = wrap(async (req, res) => {
+  const reviewId = parseId(req.params?.reviewId);
+  const userId = req.user?.userId ?? null;
+  await unlikeReview(reviewId, userId);
+  ok(res);
+});
+
 /* ============== ADMIN ============== */
 
 /** GET /admin/reviews */

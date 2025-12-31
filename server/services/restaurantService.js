@@ -771,3 +771,121 @@ export async function deleteRestaurant(restaurantId) {
     conn.release();
   }
 }
+
+/** 음식점 좋아요
+ * @param {number} restaurantId
+ * @param {number} userId
+ * @returns {Promise<void>}
+ */
+export async function likeRestaurant(restaurantId, userId) {
+  if (userId == null) throw new AppError(ERR.UNAUTHORIZED, { message: '로그인이 필요합니다.' });
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1) 음식점 존재 + 공개 여부 확인 (public like 정책)
+    const [rRows] = await conn.execute(
+      `
+      SELECT restaurant_id AS restaurantId, is_published AS isPublished
+      FROM restaurant
+      WHERE restaurant_id = :restaurantId
+      LIMIT 1
+      `,
+      { restaurantId },
+    );
+
+    const r = rRows?.[0];
+    if (!r)
+      throw new AppError(ERR.NOT_FOUND, {
+        message: '해당 음식점이 존재하지 않습니다.',
+        data: { targetId: restaurantId },
+      });
+
+    if (!r.isPublished)
+      throw new AppError(ERR.FORBIDDEN, {
+        message: '비공개 음식점에는 좋아요를 할 수 없습니다.',
+        data: { targetId: restaurantId },
+      });
+
+    // 2) 좋아요
+    await conn.execute(
+      `
+      INSERT IGNORE INTO restaurant_like (user_id, restaurant_id)
+      VALUES (:userId, :restaurantId)
+      `,
+      { userId, restaurantId },
+    );
+
+    await conn.commit();
+  } catch (err) {
+    try {
+      await conn.rollback();
+    } catch {}
+    if (err instanceof AppError) throw err;
+
+    throw new AppError(ERR.DB, {
+      message: '음식점 좋아요 처리 중 오류가 발생했습니다.',
+      data: { keys: ['restaurantId', 'userId'], targetId: restaurantId, dbCode: err?.code },
+      cause: err,
+    });
+  } finally {
+    conn.release();
+  }
+}
+
+/** 음식점 좋아요 취소
+ * @param {number} restaurantId
+ * @param {number} userId
+ * @returns {Promise<void>}
+ */
+export async function unlikeRestaurant(restaurantId, userId) {
+  if (userId == null) throw new AppError(ERR.UNAUTHORIZED, { message: '로그인이 필요합니다.' });
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // (선택) 존재만 확인: 삭제된 음식점이면 404
+    const [rRows] = await conn.execute(
+      `
+      SELECT restaurant_id AS restaurantId
+      FROM restaurant
+      WHERE restaurant_id = :restaurantId
+      LIMIT 1
+      `,
+      { restaurantId },
+    );
+
+    if (!rRows?.[0])
+      throw new AppError(ERR.NOT_FOUND, {
+        message: '해당 음식점이 존재하지 않습니다.',
+        data: { targetId: restaurantId },
+      });
+
+    // 좋아요 취소(멱등)
+    await conn.execute(
+      `
+      DELETE FROM restaurant_like
+      WHERE user_id = :userId
+        AND restaurant_id = :restaurantId
+      `,
+      { userId, restaurantId },
+    );
+
+    await conn.commit();
+  } catch (err) {
+    try {
+      await conn.rollback();
+    } catch {}
+    if (err instanceof AppError) throw err;
+
+    throw new AppError(ERR.DB, {
+      message: '음식점 좋아요 취소 처리 중 오류가 발생했습니다.',
+      data: { keys: ['restaurantId', 'userId'], targetId: restaurantId, dbCode: err?.code },
+      cause: err,
+    });
+  } finally {
+    conn.release();
+  }
+}
