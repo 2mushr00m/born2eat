@@ -15,6 +15,8 @@ import {
   deleteReview,
   hideReview,
   showReview,
+  likeReview,
+  unlikeReview,
 } from '../services/reviewService.js';
 
 /* ============== PUBLIC ============== */

@@ -1436,6 +1436,7 @@ paths:
           in: path
           description: ''
           required: true
+          example: 3
           schema:
             type: integer
         - name: Set-Cookie
@@ -1479,6 +1480,7 @@ paths:
           in: path
           description: ''
           required: true
+          example: 3
           schema:
             type: integer
         - name: Set-Cookie

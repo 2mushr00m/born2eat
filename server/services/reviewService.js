@@ -897,3 +897,114 @@ export async function showReview(reviewId, opt) {
     conn.release();
   }
 }
+
+/** 리뷰 좋아요
+ * @param {number} reviewId
+ * @param {number} userId
+ * @returns {Promise<void>}
+ */
+export async function likeReview(reviewId, userId) {
+  if (userId == null) throw new AppError(ERR.UNAUTHORIZED, { message: '로그인이 필요합니다.' });
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1) 리뷰 존재/노출 확인 (숨김 리뷰는 노출 방지 차원에서 NOT_FOUND)
+    const [rows] = await conn.execute(
+      `
+      SELECT r.review_id AS reviewId, r.is_visible AS isVisible
+      FROM review r
+      WHERE r.review_id = ?
+      LIMIT 1
+      `,
+      [reviewId],
+    );
+
+    const it = rows?.[0];
+    if (!it || Number(it.isVisible) !== 1)
+      throw new AppError(ERR.NOT_FOUND, {
+        message: '해당 리뷰를 찾을 수 없습니다.',
+        data: { targetId: reviewId },
+      });
+
+    // 2) 좋아요
+    await conn.execute(
+      `
+      INSERT IGNORE INTO review_like (user_id, review_id)
+      VALUES (?, ?)
+      `,
+      [userId, reviewId],
+    );
+
+    await conn.commit();
+  } catch (err) {
+    try {
+      await conn.rollback();
+    } catch {}
+    if (err instanceof AppError) throw err;
+
+    throw new AppError(ERR.DB, {
+      message: '리뷰 좋아요 처리 중 오류가 발생했습니다.',
+      data: { keys: ['reviewId', 'userId'], targetId: reviewId, dbCode: err?.code },
+      cause: err,
+    });
+  } finally {
+    conn.release();
+  }
+}
+
+/** 리뷰 좋아요 취소
+ * @param {number} reviewId
+ * @param {number} userId
+ * @returns {Promise<void>}
+ */
+export async function unlikeReview(reviewId, userId) {
+  if (userId == null) throw new AppError(ERR.UNAUTHORIZED, { message: '로그인이 필요합니다.' });
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 존재 확인: 삭제된 리뷰면 404
+    const [rows] = await conn.execute(
+      `
+      SELECT r.review_id AS reviewId
+      FROM review r
+      WHERE r.review_id = ?
+      LIMIT 1
+      `,
+      [reviewId],
+    );
+
+    if (!rows?.[0])
+      throw new AppError(ERR.NOT_FOUND, {
+        message: '해당 리뷰를 찾을 수 없습니다.',
+        data: { targetId: reviewId },
+      });
+
+    await conn.execute(
+      `
+      DELETE FROM review_like
+      WHERE user_id = ?
+        AND review_id = ?
+      `,
+      [userId, reviewId],
+    );
+
+    await conn.commit();
+  } catch (err) {
+    try {
+      await conn.rollback();
+    } catch {}
+    if (err instanceof AppError) throw err;
+
+    throw new AppError(ERR.DB, {
+      message: '리뷰 좋아요 취소 처리 중 오류가 발생했습니다.',
+      data: { keys: ['reviewId', 'userId'], targetId: reviewId, dbCode: err?.code },
+      cause: err,
+    });
+  } finally {
+    conn.release();
+  }
+}
