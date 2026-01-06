@@ -9,6 +9,8 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   namedPlaceholders: true,
+  dateStrings: false,
+  timezone: 'Z',
 });
 
 export default pool;

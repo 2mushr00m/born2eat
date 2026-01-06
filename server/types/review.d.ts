@@ -49,6 +49,7 @@ declare global {
     type Item = {
       reviewId: number;
       restaurantId: number;
+      restaurantName: string;
       userId: number;
       userNickname: string;
 

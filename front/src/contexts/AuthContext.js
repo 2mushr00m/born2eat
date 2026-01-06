@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import api from "../api/api";
-import { LogoutApi } from "../api/auth";
+import { createContext, useContext, useEffect, useState } from 'react';
+import api from '../api/api';
+import { LogoutApi } from '../api/auth';
 
 const AuthContext = createContext(null);
 
@@ -11,12 +11,12 @@ export function AuthProvider({ children }) {
   // 로그인 상태 체크
   const fetchMe = async () => {
     try {
-      const res = await api.get("/me");
+      const res = await api.get('/me');
       const me = res.data?.result ?? null;
       setUser(me);
       // console.log("fetchMe:", me); // 디버깅용
     } catch (err) {
-      console.error("fetchMe error:", err);
+      console.error('fetchMe error:', err);
       setUser(null);
     } finally {
       setLoading(false);
@@ -28,7 +28,6 @@ export function AuthProvider({ children }) {
     try {
       await LogoutApi();
     } catch {
-
     } finally {
       setUser(null);
     }
@@ -42,7 +41,7 @@ export function AuthProvider({ children }) {
     user,
     loading,
     isLoggedIn: Boolean(user),
-    isAdmin: user?.role === "ADMIN",
+    isAdmin: user?.role === 'ADMIN',
     fetchMe,
     logout,
   };
@@ -52,6 +51,6 @@ export function AuthProvider({ children }) {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth는 AuthProvider 내부에서만 사용 가능합니다.");
+  if (!context) throw new Error('useAuth는 AuthProvider 내부에서만 사용 가능합니다.');
   return context;
 };

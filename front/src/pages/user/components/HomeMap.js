@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from "react-router-dom";
+import { Link } from 'react-router-dom';
 import KakaoMap from './KakaoMap';
 
 export default function HomeMap({ list }) {
@@ -10,15 +10,18 @@ export default function HomeMap({ list }) {
           {list.map((t, i) => (
             <li key={t.restaurantId} className="slider-item">
               <article className="card">
-                <div className="card-image"
+                <div
+                  className="card-image"
                   style={{
-                    backgroundImage: `url(${t.mainPhoto || `https://picsum.photos/800/600?random=${i}`})`
+                    backgroundImage: `url(${t.mainPhoto || `https://picsum.photos/800/600?random=${i}`})`,
                   }}
                 />
                 <div className="card-body">
                   <div>
                     <h3>{t.name}</h3>
-                    <p>{t.region?.depth1} {t.region?.depth2}</p>
+                    <p>
+                      {t.region?.depth1} {t.region?.depth2}
+                    </p>
                   </div>
                   <Link to={`/restaurant/${t.restaurantId}`}>
                     <img src="/assets/icon_arrow.png" alt="icon_arrow" />

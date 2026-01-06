@@ -74,6 +74,36 @@
       }
     }
 
+    &__review{
+      > div{
+        margin: 15px 0; padding: 0 5px;
+        position: relative;
+        .photo-box{
+          .photo-gallery {
+            display: flex; gap: 5px;
+            img {
+              width: 30px; height: 30px;
+            }
+          }
+        }
+      }
+      ul{
+        border: 1px solid $gray;
+        box-shadow: 3px 3px 5px $gray;
+        padding: 20px 0;
+        margin-bottom: 30px;
+      }
+      li{
+        padding: 10px 30px;
+        span{color: $accent; margin-right: 5px;}
+      }
+      li:nth-child(1){
+        display: flex; justify-content: space-between; align-items: center;
+        color: $brown;
+        span{font-size: 14px; color: #777;}
+      }
+    }
+
     &__empty{
       text-align: center;
     }

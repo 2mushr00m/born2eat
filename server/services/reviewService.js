@@ -268,7 +268,7 @@ export async function readReviewList(filter, opt) {
   try {
     const params = {};
     const where = [];
-    const join = ['JOIN user u ON u.user_id = r.user_id'];
+    const join = ['JOIN user u ON u.user_id = r.user_id', 'JOIN restaurant res ON res.restaurant_id = r.restaurant_id'];
 
     if (restaurantId != null) {
       where.push('r.restaurant_id = :restaurantId');
@@ -292,7 +292,6 @@ export async function readReviewList(filter, opt) {
         where.push('r.content LIKE :qContent');
         params.qContent = like;
       } else if (searchTarget === REVIEW_SEARCH_TARGET.RESTAURANT) {
-        join.push('JOIN restaurant res ON res.restaurant_id = r.restaurant_id');
         where.push('res.name LIKE :qResName');
         params.qResName = like;
       } else if (searchTarget === REVIEW_SEARCH_TARGET.USER) {
@@ -330,6 +329,7 @@ export async function readReviewList(filter, opt) {
       SELECT
         r.review_id       AS reviewId,
         r.restaurant_id   AS restaurantId,
+        res.name          AS restaurantName,
         r.user_id         AS userId,
         u.nickname        AS userNickname,
 
@@ -380,6 +380,97 @@ export async function readReviewList(filter, opt) {
     throw new AppError(ERR.DB, {
       message: '리뷰 목록 조회 중 오류가 발생했습니다.',
       data: { extra: { filter, opt }, dbCode: err?.code },
+      cause: err,
+    });
+  } finally {
+    conn.release();
+  }
+}
+
+/** 리뷰 상세 조회
+ * @param {number} reviewId
+ * @param {{
+ *   mode?: 'PUBLIC'|'ME'|'ADMIN',
+ *   viewerId?: number | null,
+ *   include?: { detail?: boolean, viewerLiked?: boolean }
+ * }} [opt]
+ * @returns {Promise<review.Item>}
+ */
+export async function readReview(reviewId, opt) {
+  const { mode = 'PUBLIC', viewerId, include } = opt || {};
+  const conn = await db.getConnection();
+
+  try {
+    const params = { reviewId };
+    const where = ['r.review_id = :reviewId'];
+    const join = ['JOIN user u ON u.user_id = r.user_id', 'JOIN restaurant res ON res.restaurant_id = r.restaurant_id'];
+
+    // PUBLIC/ME는 숨김 리뷰 차단, ADMIN은 모두 허용
+    if (mode !== 'ADMIN') where.push('r.is_visible = 1');
+
+    const [rows] = await conn.execute(
+      `
+      SELECT
+        r.review_id       AS reviewId,
+        r.restaurant_id   AS restaurantId,
+        res.name          AS restaurantName,
+        r.user_id         AS userId,
+        u.nickname        AS userNickname,
+
+        r.rating          AS rating,
+        r.content         AS content,
+        (r.is_visible = 1) AS isVisible,
+
+        r.created_at      AS createdAt,
+        r.updated_at      AS updatedAt,
+
+        (
+          SELECT COUNT(*)
+          FROM review_like rl
+          WHERE rl.review_id = r.review_id
+        ) AS likeCount
+      FROM review r
+      ${join.join('\n')}
+      WHERE ${where.join(' AND ')}
+      LIMIT 1
+      `,
+      params,
+    );
+
+    const item = rows?.[0];
+    if (!item)
+      throw new AppError(ERR.NOT_FOUND, {
+        message: '해당 리뷰가 존재하지 않습니다.',
+        data: { targetId: reviewId, extra: { mode } },
+      });
+
+    /** @type {review.Item} */
+    const out = {
+      ...item,
+      isVisible: Boolean(item.isVisible),
+      rating: Number(item.rating),
+      tags: [],
+      photos: [],
+      viewerLiked: false,
+    };
+
+    // detail attach (tags/photos)
+    if (include?.detail) {
+      await attachReviewTags(conn, [out], [out.reviewId]);
+      await attachReviewPhotos(conn, [out], [out.reviewId]);
+    }
+
+    // viewerLiked attach
+    if (include?.viewerLiked) {
+      await attachViewerLiked(conn, [out], [out.reviewId], viewerId);
+    }
+
+    return out;
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    throw new AppError(ERR.DB, {
+      message: '리뷰 상세 조회 중 오류가 발생했습니다.',
+      data: { targetId: reviewId, dbCode: err?.code, extra: { opt } },
       cause: err,
     });
   } finally {

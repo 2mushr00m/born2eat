@@ -9,6 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.13.2",
     "born2eat": "file:..",
+    "lucide-react": "^0.562.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-kakao-maps-sdk": "^1.2.0",
@@ -41,6 +42,18 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "prettier": {
+    "printWidth": 120,
+    "singleQuote": true,
+    "semi": true,
+    "trailingComma": "all",
+    "tabWidth": 2,
+    "bracketSpacing": true,
+    "bracketSameLine": true,
+    "quoteProps": "as-needed",
+    "arrowParens": "always",
+    "proseWrap": "preserve"
   },
   "homepage": "."
 }

@@ -10,6 +10,7 @@ import {
 } from './requests/reviewRequset.js';
 import {
   readReviewList,
+  readReview,
   createReview,
   updateReview,
   deleteReview,
@@ -94,11 +95,19 @@ export const unlike = wrap(async (req, res) => {
 /** GET /admin/reviews */
 export const adminList = wrap(async (req, res) => {
   const filter = buildAdminListFilter(req);
-  const viewerId = req.user?.userId ?? null;
   const result = await readReviewList(filter, {
     mode: 'ADMIN',
-    viewerId,
     include: { detail: false, viewerLiked: false },
+  });
+  ok(res, result);
+});
+
+/** GET /admin/reviews/:reviewId */
+export const adminRead = wrap(async (req, res) => {
+  const reviewId = parseId(req.params?.reviewId);
+  const result = await readReview(reviewId, {
+    mode: 'ADMIN',
+    include: { detail: true, viewerLiked: false },
   });
   ok(res, result);
 });

@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
-import api from "../../api/api";
-import KakaoMap from "./components/KakaoMap";
+import api from '../../api/api';
+import KakaoMap from './components/KakaoMap';
 
 import './Restaurant.scss';
 
@@ -21,28 +21,29 @@ export default function Restaurant() {
     setError(null);
 
     // 음식점 상세 조회
-    api.get(`/restaurants/${id}`)
-      .then(res => {
+    api
+      .get(`/restaurants/${id}`)
+      .then((res) => {
         setRestaurant(res.data.result);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
-        setError("데이터 로딩 중 오류가 발생했습니다.");
+        setError('데이터 로딩 중 오류가 발생했습니다.');
       })
       .finally(() => {
         setLoading(false);
       });
 
     // 리뷰만 따로 조회 (현재 실패 중)
-    api.get(`/restaurants/${id}/reviews`)
-      .then(res => {
+    api
+      .get(`/restaurants/${id}/reviews`)
+      .then((res) => {
         setRestaurantReview(res.data.result.items);
       })
-      .catch(err => {
-        console.error("리뷰 로딩 실패:", err);
+      .catch((err) => {
+        console.error('리뷰 로딩 실패:', err);
         setRestaurantReview([]); // 리뷰만 비워둠
       });
-
   }, [id]);
 
   if (loading) return null;
@@ -61,8 +62,10 @@ export default function Restaurant() {
           <div>
             <h2>{restaurant.name}</h2>
             <div className=" rest__top__star">
-              <p><span>{restaurant.ratingSum}</span></p>
-              <p>({restaurant.reviewCount || "0"}개)</p>
+              <p>
+                <span>{restaurant.ratingSum}</span>
+              </p>
+              <p>({restaurant.reviewCount || '0'}개)</p>
             </div>
           </div>
           <div className="rest__top__desc">
@@ -84,28 +87,16 @@ export default function Restaurant() {
       <section className="rest__contents">
         <div className="tabBox">
           <div className="tabBox__nav">
-            <button
-              className={`tabBox__tab ${activeTab === 0 ? "is-active" : ""}`}
-              onClick={() => setActiveTab(0)}
-            >
+            <button className={`tabBox__tab ${activeTab === 0 ? 'is-active' : ''}`} onClick={() => setActiveTab(0)}>
               소개
             </button>
-            <button
-              className={`tabBox__tab ${activeTab === 1 ? "is-active" : ""}`}
-              onClick={() => setActiveTab(1)}
-            >
+            <button className={`tabBox__tab ${activeTab === 1 ? 'is-active' : ''}`} onClick={() => setActiveTab(1)}>
               사진
             </button>
-            <button
-              className={`tabBox__tab ${activeTab === 2 ? "is-active" : ""}`}
-              onClick={() => setActiveTab(2)}
-            >
+            <button className={`tabBox__tab ${activeTab === 2 ? 'is-active' : ''}`} onClick={() => setActiveTab(2)}>
               리뷰
             </button>
-            <button
-              className={`tabBox__tab ${activeTab === 3 ? "is-active" : ""}`}
-              onClick={() => setActiveTab(3)}
-            >
+            <button className={`tabBox__tab ${activeTab === 3 ? 'is-active' : ''}`} onClick={() => setActiveTab(3)}>
               방송
             </button>
           </div>
@@ -113,9 +104,14 @@ export default function Restaurant() {
             {activeTab === 0 && (
               <div className="tabBox__contents__desc">
                 <div>
-                  <p>{restaurant.name}은(는) {restaurant.region.depth1} {restaurant.region.depth2 || "(DB: region depth2 추가)"}에 위치한 {restaurant.foodCategory} 전문점으로, </p>
-                  <p>대표 메뉴는 {restaurant.mainFood || "(DB: mainFood 추가)"}입니다.</p><br/>
-                  <p>{restaurant.description || "(DB: description 추가)"}</p>
+                  <p>
+                    {restaurant.name}은(는) {restaurant.region.depth1}{' '}
+                    {restaurant.region.depth2 || '(DB: region depth2 추가)'}에 위치한 {restaurant.foodCategory}{' '}
+                    전문점으로,{' '}
+                  </p>
+                  <p>대표 메뉴는 {restaurant.mainFood || '(DB: mainFood 추가)'}입니다.</p>
+                  <br />
+                  <p>{restaurant.description || '(DB: description 추가)'}</p>
                 </div>
                 <div>
                   <KakaoMap />
@@ -130,12 +126,40 @@ export default function Restaurant() {
             {activeTab === 2 && (
               <div className="tabBox__contents__review">
                 {restaurantReview.length > 0 ? (
-                  restaurantReview.map(r => (
-                    <div key={r.reviewId} className="review-item">
-                      <div>
-                        {r.userNickname}
-                        {r.content}
-                      </div>
+                  restaurantReview.map((i) => (
+                    <div key={i.reviewId}>
+                      <ul>
+                        <li>
+                          <p>{i.userNickname}</p>
+                          <span>작성일: {new Date(i.createdAt).toLocaleDateString('ko-KR')}</span>
+                        </li>
+                        <li>
+                          <p>
+                            <span>
+                              {'★'.repeat(i.rating)}
+                              {'☆'.repeat(5 - i.rating)}
+                            </span>{' '}
+                            {i.rating}점
+                          </p>
+                        </li>
+                        <li className="tag-list">
+                          {i.tags?.map((name) => (
+                            <span key={name} className="tag-item">
+                              #{name}
+                            </span>
+                          ))}
+                        </li>
+                        <li>{i.content}</li>
+                        {i.photos?.length > 0 && (
+                          <li className="photo-box">
+                            <div className="photo-gallery">
+                              {i.photos.map((photo) => (
+                                <img key={photo.id} src={photo.path} alt={photo.caption || '리뷰 사진'} />
+                              ))}
+                            </div>
+                          </li>
+                        )}
+                      </ul>
                     </div>
                   ))
                 ) : (
@@ -151,7 +175,10 @@ export default function Restaurant() {
                 <h3>📌 방송 보러가기</h3>
                 <div className="broadcastBox">
                   <div className="broadcastBox__in">
-                    <a href={restaurant.broadcasts?.ott?.NETFLIX || "https://www.netflix.com/kr/"} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={restaurant.broadcasts?.ott?.NETFLIX || 'https://www.netflix.com/kr/'}
+                      target="_blank"
+                      rel="noopener noreferrer">
                       <div>
                         <img src="/assets/broadcast_netflix.png" alt="netflix" />
                         <p>넷플릭스에서 보기</p>
@@ -159,7 +186,10 @@ export default function Restaurant() {
                     </a>
                   </div>
                   <div className="broadcastBox__in">
-                    <a href={restaurant.broadcasts?.ott?.TVING || "https://www.tving.com/onboarding"} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={restaurant.broadcasts?.ott?.TVING || 'https://www.tving.com/onboarding'}
+                      target="_blank"
+                      rel="noopener noreferrer">
                       <div>
                         <img src="/assets/broadcast_tving.png" alt="tving" />
                         <p>티빙에서 보기</p>
@@ -167,7 +197,10 @@ export default function Restaurant() {
                     </a>
                   </div>
                   <div className="broadcastBox__in">
-                    <a href={restaurant.broadcasts?.ott?.WAVVE || "https://www.wavve.com/"} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={restaurant.broadcasts?.ott?.WAVVE || 'https://www.wavve.com/'}
+                      target="_blank"
+                      rel="noopener noreferrer">
                       <div>
                         <img src="/assets/broadcast_wavve.png" alt="wavve" />
                         <p>웨이브에서 보기</p>
@@ -175,7 +208,10 @@ export default function Restaurant() {
                     </a>
                   </div>
                   <div className="broadcastBox__in">
-                    <a href={restaurant.broadcasts?.ott?.WATCHA || "https://watcha.com/browse/theater"} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={restaurant.broadcasts?.ott?.WATCHA || 'https://watcha.com/browse/theater'}
+                      target="_blank"
+                      rel="noopener noreferrer">
                       <div>
                         <img src="/assets/broadcast_watcha.png" alt="watcha" />
                         <p>왓챠에서 보기</p>
