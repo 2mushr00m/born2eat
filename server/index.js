@@ -40,7 +40,16 @@ const ALLOWED_ORIGINS = [
 const app = express();
 app.set('trust proxy', true); // HTTP → HTTPS
 
-// 5) 보안/공통 미들웨어
+// 5) 정적 파일
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use('/upload', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
+app.use('/upload', express.static(path.join(__dirname, 'upload')));
+
+// 6) 보안/공통 미들웨어
 app.use(helmet());
 app.use(
   cors({
@@ -49,8 +58,8 @@ app.use(
       if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
       return cb(
         new AppError(ERR.FORBIDDEN, {
-          logMessage: 'CORS origin이 허용되지 않습니다.',
-          data: { origin },
+          message: 'CORS origin이 허용되지 않습니다.',
+          data: { extra: { origin } },
         }),
       );
     },
@@ -64,7 +73,7 @@ app.use(compression());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// 6) 세션 쿠키
+// 7) 세션 쿠키
 const isProd = process.env.NODE_ENV === 'production';
 app.use(
   session({
@@ -81,11 +90,6 @@ app.use(
     },
   }),
 );
-
-// 7) 정적 파일
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-app.use('/upload', express.static(path.join(__dirname, 'upload')));
 
 // 8) 라우터 연결
 app.use('/tags', tagRouter);

@@ -8,7 +8,8 @@
     "server:format": "npm --prefix server run format",
 
     "front:install": "npm --prefix front install",
-    "front:dev": "npm --prefix front run dev",
-    "front:build": "npm --prefix front run build"
+    "front:start": "cd front && npm run start",
+    "front:dev": "cd front && npm run dev",
+    "front:build": "cd front && npm run build"
   }
 }

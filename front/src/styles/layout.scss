@@ -1,0 +1,118 @@
+@use './variables' as *;
+
+// layout
+.user-theme,
+.admin-theme {
+  background: $bg-page;
+  color: $text;
+
+  main {
+    max-width: 1600px; min-height: calc(100vh - 100px);
+    margin: 0 auto; padding: 0 3%;
+    position: relative;
+    background: $bg-page;
+  }
+}
+.user-theme {
+  .main {
+    padding-top: 50px;
+    text-align: center;
+  }
+}
+.admin-theme {
+  .main {
+    margin-left: calc(170px + 3%);
+    &__wrap{
+    padding-top: 30px;
+    }
+  }
+}
+
+// header
+.header {
+  background: $bg-header;
+
+  &__wrap {
+    display: flex;
+    justify-content: space-between; align-items: center;
+    max-width: 1600px; height: 100px;
+    margin: 0 auto; padding: 0 3%;
+  }
+
+  &__logo {
+    display: flex;
+    img {max-width: 350px;}
+    p {font-size: 20px; font-weight: 700; color: $text-inverse}
+  }
+
+  &__logo-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    display: flex; align-items: flex-end; gap: 3px;
+  }
+
+  &__nav {
+    display: flex; gap: 30px;
+    ul {display: flex; justify-content: right; gap: 30px;}
+    li:hover {color: $accent; border-bottom: 1px solid $accent;}
+    button {
+      background: none;
+      border: none;
+      padding: 0;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+    }
+  }
+}
+
+/* footer */
+.footer {
+  height: 130px;
+  background: $bg-footer;
+  color: $text-inverse;
+
+  &__wrap {
+    display: flex;
+    justify-content: space-between; align-items: center;
+
+    max-width: 1600px; height: 100%;
+    margin: 0 auto; padding: 0 3%;
+  }
+
+  &__left {
+    img {width: 200px;}
+    p {font-size: 12px;}
+  }
+
+  &__right {
+    display: flex; gap: 15px;
+    p {font-size: 14px;}
+  }
+}
+
+@media (max-width: 768px) {
+  .header__nav, .footer__right{
+    display: none;
+  }
+}
+
+// aside
+.aside {
+  // background-color: #333;
+  border-right: 1px solid #222;
+  width: 170px; height: 100%; margin-left: 3%;
+  position: absolute; top: 0; left: 0;
+
+  &__wrap {
+    ul{
+      li{margin-top: 10px;}
+      h3{margin-top: 30px;}
+      a{margin-left: 20px;}
+    }
+  }
+}

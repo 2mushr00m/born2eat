@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Map, MapMarker, CustomOverlayMap, ZoomControl } from 'react-kakao-maps-sdk';
+import React, { useState } from 'react';
+import { Map, MapMarker, ZoomControl } from 'react-kakao-maps-sdk';
 
 export default function KakaoMap() {
   const [map, setMap] = useState({
@@ -24,32 +24,15 @@ export default function KakaoMap() {
           }}
           level={3}>
           <MapMarker position={{ lat: 33.55635, lng: 126.795841 }}>
-            <div>Hello World!</div>
-            어떻게 이걸 꾸밀까요
+            <div>
+              <p>가게 이름</p>
+              <p>가게 주소</p>
+            </div>
           </MapMarker>
-          <CustomOverlayMap position={{ lat: 33.55735, lng: 126.795941 }}>어어엉?</CustomOverlayMap>
-
-          {/* <MapTypeControl position={"TOPRIGHT"} /> */}
           <ZoomControl position={'RIGHT'} />
         </Map>
-
-        <div>이거를 커스텀 컨트롤러로 사용</div>
-        <div
-          style={{ position: 'absolute', top: '10px', left: '10px', overflow: 'hidden', zIndex: 1 }}
-          onClick={() => alert('ㅇㅇ')}>
-          커스텀 버튼
-        </div>
       </div>
-      <p>
-        <button
-          onClick={() =>
-            setMap({
-              center: { lat: 33.55635, lng: 126.795841 },
-              isPanto: false,
-            })
-          }>
-          지도 중심좌표 이동시키기
-        </button>{' '}
+      <div>
         <button
           onClick={() =>
             setMap({
@@ -57,9 +40,9 @@ export default function KakaoMap() {
               isPanto: true,
             })
           }>
-          지도 중심좌표 부드럽게 이동시키기
+          중심으로
         </button>
-      </p>
+      </div>
     </>
   );
 }

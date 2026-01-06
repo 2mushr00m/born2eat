@@ -57,6 +57,7 @@ function buildListFilter(req) {
  * @returns {review.ListFilter} */
 export function buildPublicListFilter(req) {
   const filter = buildListFilter(req);
+  const query = req?.query || {};
 
   filter.sort = REVIEW_SORT.POPULAR;
   if (query.sort != null) {

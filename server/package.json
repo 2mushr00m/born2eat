@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "format": "prettier --cache --write .",
-    "dev": "npm run nodemon index.js",
+    "dev": "nodemon index.js",
     "start": "node index.js"
   },
   "keywords": [],
@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@redocly/cli": "^2.14.0",
+    "nodemon": "^3.1.11",
     "prettier": "^3.7.4"
   },
   "prettier": {

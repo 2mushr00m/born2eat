@@ -1,0 +1,30 @@
+:root {
+  /* background */
+  --color-bg-page: #fdfdfd;
+  --color-bg-header: #fff0cc;
+  --color-bg-footer: #3b2919;
+
+  /* text */
+  --color-text: #222;
+  --color-text-inverse: #fdfdfd;
+
+  /* theme */
+  --color-accent: #f35b35;
+  --color-accent_sub: #ffb515;
+  --color-soft: #fdfdfd;
+  --color-light: #fff0cc;
+  --color-brown: #3b2919;
+  --color-gray: #ddd;
+  --color-black: #222;
+}
+
+.admin-theme {
+  /* background */
+  --color-bg-page: #333;
+  --color-bg-header: #222;
+  --color-bg-footer: #222;
+
+  /* text */
+  --color-text: #ccc;
+  --color-text-inverse: #ccc;
+}

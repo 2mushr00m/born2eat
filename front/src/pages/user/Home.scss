@@ -1,0 +1,138 @@
+@use '../../styles/variables.scss' as *;
+@use './home/keywords';
+@use './home/list';
+@use './home/map';
+
+// 0. 전체 레이아웃
+.home {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 80px;
+}
+
+// 1. 검색창
+.home-search {
+  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.search-box {
+  width: 95%;
+  max-width: 500px;
+  position: relative;
+  box-sizing: border-box;
+
+  input {
+    width: 100%;
+    height: 40px;
+    border: 1px solid $gray;
+    border-radius: 30px;
+    box-sizing: border-box;
+    padding: 0 50px 0 30px;
+  }
+
+  input:focus {
+    outline: none;
+  }
+
+  &__icon1 {
+    position: absolute;
+    top: 50%;
+    right: 53px;
+    width: 18px;
+    cursor: pointer;
+    transform: translateY(-50%);
+  }
+
+  &__icon2 {
+    position: absolute;
+    top: 50%;
+    right: 30px;
+    width: 16px;
+    cursor: pointer;
+    transform: translateY(-50%);
+  }
+}
+
+/* 2. 키워드 */
+.home-tabs {
+  width: 95%;
+  margin-top: 30px;
+
+  &__nav {
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    text-align: center;
+  }
+
+  &__tab {
+    width: calc(100% / 3);
+    padding: 5px 0;
+    font-size: 15px;
+    background-color: $gray;
+    color: gray;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+
+    &.is-active {
+      background-color: $brown;
+      color: #fff;
+      border: 1px solid $brown;
+      border-bottom: none;
+    }
+  }
+
+  &__panel {
+    display: flex; align-items: center; justify-content: center;
+    max-width: 500px;
+    height: 100px;
+    margin: 0 auto;
+    padding: 20px 0;
+    border: 1px solid $brown;
+    border-radius: 0 0 8px 8px;
+    box-sizing: border-box;
+  }
+}
+
+// 3. 토글
+.home-view-toggle {
+  margin: 30px 0 20px;
+}
+
+.view-toggle {
+  display: flex;
+  justify-content: flex-end;
+  gap: 3px;
+
+  &__button {
+    width: 33px;
+    height: 33px;
+    background: none;
+    border: 1px solid lightgray;
+    border-radius: 5px;
+    cursor: pointer;
+
+    &.is-active {
+      background-color: $light;
+      border-radius: 6px;
+    }
+  }
+
+  &__icon1 {
+    height: 18px;
+    margin-top: 1px;
+  }
+
+  &__icon2 {
+    width: 18px;
+    margin-top: 2px;
+  }
+}
+
+// 4. 결과
+.home-content {
+  width: 100%;
+}

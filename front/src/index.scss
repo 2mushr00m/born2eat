@@ -1,0 +1,35 @@
+@use './styles/variables.scss' as *;
+
+html,
+body {
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  font-family: 'SUITE Variable', 'Sans Variable', 'Wanted Sans',
+    -apple-system, BlinkMacSystemFont, system-ui,
+    'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic',
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body::selection {
+  background-color: #000; color: $accent;
+}
+
+body::-webkit-scrollbar {
+  width: 8px; height: 8px;
+}
+
+body::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+body::-webkit-scrollbar-thumb {
+  background-color: $gray;
+  background-clip: padding-box;
+  border-radius: 8px;
+}

@@ -48,7 +48,7 @@ nvm use 22.21.0
 ### 2) 의존성 설치
 
 ```text
-# (프론트 준비 중) npm run front:install
+npm run front:install
 npm run server:install
 ```
 
@@ -62,6 +62,7 @@ cp server/.env.example server/.env
 
 ```text
 npm run server:dev      # 서버 시작
+npm run front:start     # 프론트 시작
 ```
 
 ### 5) 접속 확인
