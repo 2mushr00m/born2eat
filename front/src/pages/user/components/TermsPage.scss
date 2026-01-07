@@ -1,0 +1,76 @@
+.modal__content {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.terms-container {
+  max-width: 1024px;
+  margin: 0 auto; /* 모달 내부이므로 상하 마진 제거 */
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  line-height: 1.8;
+}
+
+.terms-container h1 {
+  font-size: 2.5rem;
+  color: #d9642a;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+}
+
+.terms-container .last-updated {
+  font-size: 0.95rem;
+  color: #888;
+  text-align: right;
+  margin-bottom: 2rem;
+}
+
+.terms-container section {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px dashed #eee; // 각 섹션을 구분하는 점선
+}
+
+.terms-container section:last-of-type {
+  border-bottom: none; // 마지막 섹션에는 구분선이 없습니다.
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.terms-container h2 {
+  font-size: 1.6rem;
+  color: #d15c1a;
+  margin-bottom: 1rem;
+  border-left: 5px solid #ffb347; // 왼쪽 테두리로 강조
+  padding-left: 15px;
+  line-height: 1.4;
+}
+
+.terms-container p {
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+  color: #555;
+  text-align: justify; // 텍스트를 양쪽 정렬하여 깔끔하게 보입니다.
+}
+
+/* 반응형 디자인 */
+@media screen and (max-width: 768px) {
+  .terms-container {
+    margin: 1.5rem 1rem;
+    padding: 1.5rem;
+  }
+  .terms-container h1 {
+    font-size: 2rem;
+  }
+  .terms-container h2 {
+    font-size: 1.3rem;
+  }
+  .terms-container p {
+    font-size: 0.9rem;
+  }
+}

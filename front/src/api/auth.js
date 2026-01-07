@@ -1,24 +1,16 @@
 import api from './api';
 
-// 로그인
-export const LoginApi = ({ email, password }) => {
-  return api.post("/auth/login", {
-    email,
-    password,
-  });
+// login
+export const loginApi = ({ email, password }) => {
+  return api.post("/auth/login", { email, password });
 };
 
-// 로그아웃
-export const LogoutApi = () => {
+// logout
+export const logoutApi = () => {
   return api.post("/auth/logout");
 };
 
-// 회원가입 임시
-export const signup = ({ email, password, name, phone }) => {
-  return api.post('/api/signup', {
-    email,
-    password,
-    name,
-    phone
-  });
+// signup
+export const signupApi = ({ email, password, phone, nickname }) => {
+  return api.post("/auth/signup", { email, password, phone, nickname });
 };

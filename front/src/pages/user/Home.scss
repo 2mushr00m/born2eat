@@ -55,7 +55,7 @@
   }
 }
 
-/* 2. 키워드 */
+// 2. 키워드
 .home-tabs {
   width: 95%;
   margin-top: 30px;
@@ -87,6 +87,7 @@
 
   &__panel {
     display: flex; align-items: center; justify-content: center;
+    background-color: #fff;
     max-width: 500px;
     height: 100px;
     margin: 0 auto;

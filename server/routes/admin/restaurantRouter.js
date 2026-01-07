@@ -10,9 +10,11 @@ router.get('/:restaurantId', restaurantController.adminRead);
 router.patch('/:restaurantId', restaurantController.adminUpdate);
 router.delete('/:restaurantId', restaurantController.adminDestroy);
 
-router.put('/:restaurantId/tags', restaurantController.putTags);
-router.delete('/:restaurantId/tags/:tagCode', restaurantController.deleteTag);
-router.patch('/:restaurantId/photos', restaurantController.patchPhotos);
-router.patch('/:restaurantId/broadcasts', restaurantController.patchBroadcasts);
+router.post('/sync-kakao', restaurantController.adminSyncKakao);
+
+// router.put('/:restaurantId/tags', restaurantController.putTags);
+// router.delete('/:restaurantId/tags/:tagCode', restaurantController.deleteTag);
+// router.patch('/:restaurantId/photos', restaurantController.patchPhotos);
+// router.patch('/:restaurantId/broadcasts', restaurantController.patchBroadcasts);
 
 export default router;

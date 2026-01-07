@@ -6,6 +6,7 @@
 
 // 상단 - 기본정보
 .rest__top{
+  background-color: #fff;
   display: flex; gap: 50px;
   height: 200px;
   border: 1px solid #ddd;
@@ -49,24 +50,26 @@
     height: 40px;
     font-size: 16px;
     color: #999;
-    background-color: transparent;
+    background-color: #eee;
     border: 1px solid $gray;
+    border-bottom: none;
     border-radius: 10px 10px 0 0;
     cursor: pointer;
 
     &.is-active{
       background-color: $light;
-      border: 1px solid $brown;
       font-size: 16px;
       font-weight: bold;
       color: $brown;
     }
   }
   &__contents{
+    background-color: #fff;
     border: 1px solid $gray;
     border-top: none;
-    padding: 40px;
+    padding: 60px 40px;
     min-height: 300px;
+    h2{margin-bottom: 30px;}
 
     &__desc{
       > div:nth-child(1){
@@ -75,8 +78,19 @@
     }
 
     &__review{
-      > div{
-        margin: 15px 0; padding: 0 5px;
+      position: relative;
+      > button{
+        background-color: $accent;
+        border: 1px solid $accent;
+        border-radius: 20px;
+        padding: 3px 20px;
+        position: absolute; right: 10px; top: 2px;
+        font-size: 16px;
+        color: white;
+        cursor: pointer;
+      }
+      .review-box{
+        margin: 20px 0; padding: 0 5px;
         position: relative;
         .photo-box{
           .photo-gallery {

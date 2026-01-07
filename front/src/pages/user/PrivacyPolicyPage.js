@@ -1,7 +1,9 @@
+import './PrivacyPolicyPage.scss';
+
 export default function Privacy(){
   return(
     <div className="main">
-      <section>
+      <section className="privacy">
         <h2>개인정보처리방침</h2>
         <p>본 사이트는 학습·교육 목적으로 제작된 비영리적 프로젝트입니다.<br/>
         본 사이트는 회원가입, 로그인 등 개인정보를 수집하거나 저장하지 않으며,<br/>

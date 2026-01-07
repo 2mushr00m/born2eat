@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMe, patchMe } from "../../api/me";
-import "./Mypage.scss";
+import "./MypageEdit.scss";
 
 export default function MyPageEdit() {
   const navigate = useNavigate();

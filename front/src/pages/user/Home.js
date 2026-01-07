@@ -35,6 +35,12 @@ export default function Home() {
 
   const location = useLocation();
 
+  /* 로고 클릭 시 초기화 */
+  useEffect(() => {
+    if (location.pathname === "/" && location.search === "") { resetAllFilters(); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
+
   /* 검색 리셋 */
   const resetAllFilters = () => {
     setKeyword(""); setSearch("");
@@ -42,12 +48,6 @@ export default function Home() {
     setSelectedFood(null);
     setSelectedTag(null);
   };
-
-  /* 로고 클릭 시 초기화 */
-  useEffect(() => {
-    if (location.pathname === "/" && location.search === "") { resetAllFilters(); }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.key]);
 
   /* 전체 목록 조회 */
   useEffect(() => {
@@ -210,7 +210,9 @@ export default function Home() {
         {loading && <p>Loading...</p>}
 
         {!loading && noResult && (
-          <p>검색 결과가 없습니다.</p>
+          <div className="home-content__noresult">
+            <p>검색 결과가 없습니다.</p>
+          </div>
         )}
 
         {!loading && !noResult && (

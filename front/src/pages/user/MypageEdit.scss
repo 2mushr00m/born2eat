@@ -1,0 +1,29 @@
+@use '../../styles/variables.scss' as *;
+
+.mypage{
+  text-align: center;
+  max-width: 1024px;
+  margin: 0 auto;
+  
+  article {
+    margin-bottom: 60px;
+  }
+
+  &__edit{
+    display: flex; justify-content: center; align-items: center;
+    height: calc(100vh - 150px);
+    &__contents{
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 50px;
+      div:nth-child(1){
+        margin: 30px 0;
+        display: flex; flex-direction: column; gap: 10px;
+        li{margin-bottom: 5px;}
+      }
+    }
+    .btn-box{
+      justify-content: center;
+    }
+  }
+}

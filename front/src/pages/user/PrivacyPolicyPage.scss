@@ -1,0 +1,21 @@
+@use '../../styles/variables.scss' as *;
+
+.main{
+  height: calc(100vh - 200px);
+  display: flex;
+  justify-content: center; align-items: center;
+}
+
+.privacy{
+  width: 1024px;
+  border: 1px solid $gray;
+  border-radius: 10px;
+  padding: 20px;
+
+  h2{
+    margin-bottom: 20px;
+  }
+  p{
+    line-height: 150%;
+  }
+}

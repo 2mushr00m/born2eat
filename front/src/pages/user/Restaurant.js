@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 
-import api from '../../api/api';
-import KakaoMap from './components/KakaoMap';
+import api from "../../api/api";
+import { apiImageUrl } from "../../api/upload";
+import ReviewForm from "./components/ReviewForm";
+import KakaoMap from "./components/KakaoMap";
 
 import './Restaurant.scss';
 
@@ -10,6 +12,7 @@ export default function Restaurant() {
   const { id } = useParams();
   const [restaurant, setRestaurant] = useState(null);
   const [restaurantReview, setRestaurantReview] = useState([]);
+  const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,29 +24,28 @@ export default function Restaurant() {
     setError(null);
 
     // 음식점 상세 조회
-    api
-      .get(`/restaurants/${id}`)
-      .then((res) => {
+    api.get(`/restaurants/${id}`)
+      .then(res => {
         setRestaurant(res.data.result);
       })
-      .catch((err) => {
+      .catch(err => {
         console.error(err);
-        setError('데이터 로딩 중 오류가 발생했습니다.');
+        setError("데이터 로딩 중 오류가 발생했습니다.");
       })
       .finally(() => {
         setLoading(false);
       });
 
-    // 리뷰만 따로 조회 (현재 실패 중)
-    api
-      .get(`/restaurants/${id}/reviews`)
-      .then((res) => {
-        setRestaurantReview(res.data.result.items);
+    // 리뷰만 따로 조회
+    api.get(`/restaurants/${id}/reviews`)
+      .then(res => {
+        setRestaurantReview(res.data.result?.items || []);
       })
-      .catch((err) => {
-        console.error('리뷰 로딩 실패:', err);
-        setRestaurantReview([]); // 리뷰만 비워둠
+      .catch(err => {
+        console.error("리뷰 로딩 실패:", err);
+        setRestaurantReview([]);
       });
+
   }, [id]);
 
   if (loading) return null;
@@ -62,10 +64,8 @@ export default function Restaurant() {
           <div>
             <h2>{restaurant.name}</h2>
             <div className=" rest__top__star">
-              <p>
-                <span>{restaurant.ratingSum}</span>
-              </p>
-              <p>({restaurant.reviewCount || '0'}개)</p>
+              <p><span>{restaurant.ratingSum}</span></p>
+              <p>({restaurant.reviewCount || "0"}개)</p>
             </div>
           </div>
           <div className="rest__top__desc">
@@ -87,16 +87,28 @@ export default function Restaurant() {
       <section className="rest__contents">
         <div className="tabBox">
           <div className="tabBox__nav">
-            <button className={`tabBox__tab ${activeTab === 0 ? 'is-active' : ''}`} onClick={() => setActiveTab(0)}>
+            <button
+              className={`tabBox__tab ${activeTab === 0 ? "is-active" : ""}`}
+              onClick={() => setActiveTab(0)}
+            >
               소개
             </button>
-            <button className={`tabBox__tab ${activeTab === 1 ? 'is-active' : ''}`} onClick={() => setActiveTab(1)}>
+            <button
+              className={`tabBox__tab ${activeTab === 1 ? "is-active" : ""}`}
+              onClick={() => setActiveTab(1)}
+            >
               사진
             </button>
-            <button className={`tabBox__tab ${activeTab === 2 ? 'is-active' : ''}`} onClick={() => setActiveTab(2)}>
+            <button
+              className={`tabBox__tab ${activeTab === 2 ? "is-active" : ""}`}
+              onClick={() => setActiveTab(2)}
+            >
               리뷰
             </button>
-            <button className={`tabBox__tab ${activeTab === 3 ? 'is-active' : ''}`} onClick={() => setActiveTab(3)}>
+            <button
+              className={`tabBox__tab ${activeTab === 3 ? "is-active" : ""}`}
+              onClick={() => setActiveTab(3)}
+            >
               방송
             </button>
           </div>
@@ -104,14 +116,10 @@ export default function Restaurant() {
             {activeTab === 0 && (
               <div className="tabBox__contents__desc">
                 <div>
-                  <p>
-                    {restaurant.name}은(는) {restaurant.region.depth1}{' '}
-                    {restaurant.region.depth2 || '(DB: region depth2 추가)'}에 위치한 {restaurant.foodCategory}{' '}
-                    전문점으로,{' '}
-                  </p>
-                  <p>대표 메뉴는 {restaurant.mainFood || '(DB: mainFood 추가)'}입니다.</p>
-                  <br />
-                  <p>{restaurant.description || '(DB: description 추가)'}</p>
+                  <h2>📌 맛집 정보</h2>
+                  <p>{restaurant.name}은(는) {restaurant.region.depth1} {restaurant.region.depth2 || "(DB: region depth2 추가)"}에 위치한 {restaurant.foodCategory} 전문점으로, </p>
+                  <p>대표 메뉴는 {restaurant.mainFood || "(DB: mainFood 추가)"}입니다.</p><br/>
+                  <p>{restaurant.description || "(DB: description 추가)"}</p>
                 </div>
                 <div>
                   <KakaoMap />
@@ -125,22 +133,40 @@ export default function Restaurant() {
             )}
             {activeTab === 2 && (
               <div className="tabBox__contents__review">
+                <h2>📝 맛집탐험가들의 솔직 리뷰 </h2>
+                <button onClick={() => setShowModal(true)}>리뷰 쓰기</button>
+                {showModal && (
+                  <div className="modal">
+                    <div className="modal__overlay" onClick={() => setShowModal(false)} />
+                    <div className="modal__content">
+                      <ReviewForm
+                        restaurantId={id}
+                        onClose={() => setShowModal(false)}
+                        onSaved={() => {
+                          api.get(`/restaurants/${id}/reviews`)
+                            .then(res => {
+                              setRestaurantReview(res.data.result?.items || []);
+                              setShowModal(false);
+                            })
+                            .catch(() => {
+                              setRestaurantReview([]);
+                              setShowModal(false);
+                            });
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
                 {restaurantReview.length > 0 ? (
-                  restaurantReview.map((i) => (
-                    <div key={i.reviewId}>
+                  restaurantReview.map(i => (
+                    <div key={i.reviewId} className="review-box">
                       <ul>
                         <li>
                           <p>{i.userNickname}</p>
-                          <span>작성일: {new Date(i.createdAt).toLocaleDateString('ko-KR')}</span>
+                          <span>작성일: {new Date(i.createdAt).toLocaleDateString("ko-KR")}</span>
                         </li>
                         <li>
-                          <p>
-                            <span>
-                              {'★'.repeat(i.rating)}
-                              {'☆'.repeat(5 - i.rating)}
-                            </span>{' '}
-                            {i.rating}점
-                          </p>
+                          <p><span>{"★".repeat(i.rating)}{"☆".repeat(5 - i.rating)}</span> {i.rating}점</p>
                         </li>
                         <li className="tag-list">
                           {i.tags?.map((name) => (
@@ -154,7 +180,11 @@ export default function Restaurant() {
                           <li className="photo-box">
                             <div className="photo-gallery">
                               {i.photos.map((photo) => (
-                                <img key={photo.id} src={photo.path} alt={photo.caption || '리뷰 사진'} />
+                                <img
+                                  key={photo.id}
+                                  ssrc={apiImageUrl(photo.path)}
+                                  alt={photo.caption || "리뷰 사진"}
+                                />
                               ))}
                             </div>
                           </li>
@@ -172,13 +202,10 @@ export default function Restaurant() {
             )}
             {activeTab === 3 && (
               <div className="tabBox__contents__broadcast">
-                <h3>📌 방송 보러가기</h3>
+                <h2>▶️ 방송 보러가기</h2>
                 <div className="broadcastBox">
                   <div className="broadcastBox__in">
-                    <a
-                      href={restaurant.broadcasts?.ott?.NETFLIX || 'https://www.netflix.com/kr/'}
-                      target="_blank"
-                      rel="noopener noreferrer">
+                    <a href={restaurant.broadcasts?.ott?.NETFLIX || "https://www.netflix.com/kr/"} target="_blank" rel="noopener noreferrer">
                       <div>
                         <img src="/assets/broadcast_netflix.png" alt="netflix" />
                         <p>넷플릭스에서 보기</p>
@@ -186,10 +213,7 @@ export default function Restaurant() {
                     </a>
                   </div>
                   <div className="broadcastBox__in">
-                    <a
-                      href={restaurant.broadcasts?.ott?.TVING || 'https://www.tving.com/onboarding'}
-                      target="_blank"
-                      rel="noopener noreferrer">
+                    <a href={restaurant.broadcasts?.ott?.TVING || "https://www.tving.com/onboarding"} target="_blank" rel="noopener noreferrer">
                       <div>
                         <img src="/assets/broadcast_tving.png" alt="tving" />
                         <p>티빙에서 보기</p>
@@ -197,10 +221,7 @@ export default function Restaurant() {
                     </a>
                   </div>
                   <div className="broadcastBox__in">
-                    <a
-                      href={restaurant.broadcasts?.ott?.WAVVE || 'https://www.wavve.com/'}
-                      target="_blank"
-                      rel="noopener noreferrer">
+                    <a href={restaurant.broadcasts?.ott?.WAVVE || "https://www.wavve.com/"} target="_blank" rel="noopener noreferrer">
                       <div>
                         <img src="/assets/broadcast_wavve.png" alt="wavve" />
                         <p>웨이브에서 보기</p>
@@ -208,10 +229,7 @@ export default function Restaurant() {
                     </a>
                   </div>
                   <div className="broadcastBox__in">
-                    <a
-                      href={restaurant.broadcasts?.ott?.WATCHA || 'https://watcha.com/browse/theater'}
-                      target="_blank"
-                      rel="noopener noreferrer">
+                    <a href={restaurant.broadcasts?.ott?.WATCHA || "https://watcha.com/browse/theater"} target="_blank" rel="noopener noreferrer">
                       <div>
                         <img src="/assets/broadcast_watcha.png" alt="watcha" />
                         <p>왓챠에서 보기</p>
@@ -219,7 +237,7 @@ export default function Restaurant() {
                     </a>
                   </div>
                 </div>
-                <h3>📌 유튜브 클립 모음</h3>
+                <h2>▶️ 유튜브 클립 모음</h2>
               </div>
             )}
           </div>

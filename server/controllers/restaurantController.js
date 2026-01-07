@@ -18,6 +18,7 @@ import {
   unlikeRestaurant,
   readLikedRestaurantList,
 } from '../services/restaurantService.js';
+import { syncKakaoByRange } from '../services/kakaoApiService.js';
 
 /* ============== PUBLIC ============== */
 
@@ -99,6 +100,14 @@ export const adminDestroy = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
   await deleteRestaurant(restaurantId);
   ok(res);
+});
+
+/** POST /admin/restaurants/sync-kakao */
+export const adminSyncKakao = wrap(async (req, res) => {
+  const startId = parseId(req.body?.startId);
+  const endId = parseId(req.body?.endId);
+  const result = await syncKakaoByRange(startId, endId);
+  ok(res, result);
 });
 
 /* ============== TODO/Stub ============== */

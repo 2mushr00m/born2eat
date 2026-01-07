@@ -1,24 +1,32 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LoginApi } from "../../api/auth";
+import { loginApi } from "../../api/auth";
 import { useAuth } from "../../contexts/AuthContext";
 
 import Swal from 'sweetalert2'
 import './Login.scss'
 
 export default function Login(){
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [rememberId, setRememberId] = useState(false);
   const emailRef = useRef(null);
   const { fetchMe } = useAuth();
-  const nav = useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    const saved = localStorage.getItem("savedEmail");
+
+    if (saved) {
+      setForm((prev) => ({ ...prev, email: saved }));
+      setRememberId(true);
+    }
+
     emailRef.current?.focus();
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -26,30 +34,33 @@ export default function Login(){
 
     if (!form.email || !form.password) {
       Swal.fire({
-        text: '아이디와 비밀번호를 입력해 주세요.',
-        confirmButtonText: '확인',
+        text: "아이디와 비밀번호를 입력해 주세요.",
+        confirmButtonText: "확인",
         scrollbarPadding: false,
-        customClass: {
-          popup: 'custom-popup',
-          confirmButton: 'custom-button',
-        },
+        customClass: { popup: "custom-popup", confirmButton: "custom-button" },
       });
       return;
     }
 
     try {
-      await LoginApi(form);
+      await loginApi(form);
+
+      if (rememberId) {
+        localStorage.setItem("savedEmail", form.email);
+      } else {
+        localStorage.removeItem("savedEmail");
+      }
+
       await fetchMe();
-      nav('/');
-    } catch {
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+
       Swal.fire({
-        text: '아이디 또는 비밀번호를 다시 확인해주세요.',
-        confirmButtonText: '확인',
+        text: err.response?.data?.message || "아이디 또는 비밀번호를 다시 확인해주세요.",
+        confirmButtonText: "확인",
         scrollbarPadding: false,
-        customClass: {
-          popup: 'custom-popup',
-          confirmButton: 'custom-button',
-        },
+        customClass: { popup: "custom-popup", confirmButton: "custom-button" },
       });
     }
   };
@@ -90,7 +101,11 @@ export default function Login(){
           </ul>
 
           <label className="login-form__remember">
-            <input type="checkbox" />
+            <input
+              type="checkbox"
+              checked={rememberId}
+              onChange={(e) => setRememberId(e.target.checked)}
+            />
             <p>아이디 저장</p>
           </label>
 

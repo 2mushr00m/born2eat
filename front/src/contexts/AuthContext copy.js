@@ -27,9 +27,8 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await logoutApi();
-    } catch {
     } finally {
-      setUser(null);
+      await fetchMe();
     }
   };
 
