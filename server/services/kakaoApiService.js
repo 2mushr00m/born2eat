@@ -146,24 +146,12 @@ export async function syncKakaoByRange(startId, endId) {
       // placeId가 없었다면 placeId도 채움(단, picked.id 존재)
       if (!hasPlaceId && picked?.id) patch.kakaoPlaceId = String(picked.id);
 
-      if (!_hasAnyPatch(patch)) {
-        skipped += 1;
-        details.push({ restaurantId, action: 'SKIPPED', reason: 'NOTHING_TO_UPDATE', picked: _briefDoc(picked) });
-        continue;
-      }
-
-      await _updateRestaurantForSync(restaurantId, patch);
-
-      // 5) region_code 자동 갱신 (가능하면)
-      // - 좌표가 있어야 함
       if (picked?.x != null && picked?.y != null) {
         const region = await kakaoCoord2RegionCode({ x: picked.x, y: picked.y });
 
         if (region?.code) {
-          // 우리 region 테이블에 있을 때만 반영
           const exists = await _regionExists(region.code);
           if (exists) {
-            // 기존 값과 다를 때만
             if (!r.regionCode || String(r.regionCode) !== String(region.code)) {
               patch.regionCode = String(region.code);
             }
@@ -176,6 +164,14 @@ export async function syncKakaoByRange(startId, endId) {
           }
         }
       }
+
+      if (!_hasAnyPatch(patch)) {
+        skipped += 1;
+        details.push({ restaurantId, action: 'SKIPPED', reason: 'NOTHING_TO_UPDATE', picked: _briefDoc(picked) });
+        continue;
+      }
+
+      await _updateRestaurantForSync(restaurantId, patch);
 
       updated += 1;
       details.push({
