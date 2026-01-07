@@ -115,17 +115,8 @@ export default function AdSuggDetail() {
       // 1) 저장
       await AdminInquiryAnswerApi(id, { answer });
 
-      // 2) 재조회(가장 안전: status/answeredAt/answeredBy 갱신까지 한 번에 해결)
-      const { data } = await AdminInquiryDetailApi(id);
-      const it = data?.result ?? null;
-
-      setItem(it);
-      const ans = it?.answer ?? '';
-      setAnswerText(ans);
-      setOriginalAnswer(ans);
-
-      // ANSWERED면 저장 후 편집 종료
-      setIsEditing(it?.status === 'PENDING');
+      // 2) 성공 시 목록으로 이동
+      navigate('/admin/suggestion');
     } catch (e) {
       setErrMsg('답변 저장에 실패했습니다.');
     } finally {
