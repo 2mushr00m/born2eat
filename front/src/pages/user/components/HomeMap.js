@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import KakaoMap from './KakaoMap';
 
 function isValidLatLng(it) {
@@ -22,7 +22,6 @@ function CoordErrorPage({ item }) {
 }
 
 export default function HomeMap({ list }) {
-  const navigate = useNavigate();
   const [selectedId, setSelectedId] = useState(null);
 
   const onSelect = useCallback((restaurantId) => {

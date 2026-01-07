@@ -102,12 +102,15 @@ export default function AdReview() {
   }
 
   return (
-    <div className="main">
-      <section className="main__wrap">
+    <div className="adMain">
+      <section className="adMain__wrap">
         <article>
-          <div>
-            <h1>■ 리뷰목록</h1>
+          <div className='adMain__title'>
+            <h1><span>●</span> 리뷰 목록</h1>
           </div>
+        </article>
+
+        <article>
 
           {/* 검색/필터/정렬 */}
           <div

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AdminRestListApi } from '../../api/admin';
 import AdPagination from './components/AdPagination';
 
@@ -93,23 +93,43 @@ export default function AdRest() {
   }
 
   return (
-    <div className="main">
-      <section className="main__wrap">
-        <article>
-          <div>
-            <h1>■ 가게목록</h1>
-            <button type="button">식당 추가</button>
-          </div>
+    <div className="adMain">
+      <section className="adMain__wrap">
+        {/* 타이틀/버튼 */}
+        <article className="adMain__title">
+          <h1><span>●</span> 식당 목록</h1>
+          <Link to = "/admin/restaurant/new">
+            <button type="button">→ 신규 식당 등록</button>
+          </Link>
+        </article>
 
-          {/* 검색/필터/정렬 */}
-          <div
-            style={{
-              marginTop: 12,
-              display: 'flex',
-              gap: 8,
-              flexWrap: 'wrap',
-              alignItems: 'center',
-            }}>
+        {/* 검색/로딩/필터/정렬 */}
+        <article className='adMain__nav'>
+          {/* 로딩/정렬 */}
+          <div className='adMain__nav__sort'>
+            <div>
+              {loading && <p>Loading...</p>}
+              {!loading && errMsg && <p>{errMsg}</p>}
+              {!loading && !errMsg && <p>총 {total}개</p>}
+            </div>
+
+            <div>
+              <span>정렬</span>
+              <select
+                value={sort}
+                onChange={(e) => {
+                  setPage(1);
+                  setSort(e.target.value);
+                }}>
+                <option value="recent">최근등록순</option>
+                <option value="popular">좋아요순</option>
+                <option value="recommend">추천순</option>
+              </select>
+            </div>
+          </div>
+          
+          {/* 검색 */}
+          <div className='adMain__nav__search'>
             <input
               value={inputQ}
               onChange={(e) => setInputQ(e.target.value)}
@@ -122,19 +142,10 @@ export default function AdRest() {
             <button type="button" onClick={onResetAll}>
               초기화
             </button>
+          </div>
 
-            <span>정렬</span>
-            <select
-              value={sort}
-              onChange={(e) => {
-                setPage(1);
-                setSort(e.target.value);
-              }}>
-              <option value="recent">최근등록순</option>
-              <option value="popular">좋아요순</option>
-              <option value="recommend">추천순</option>
-            </select>
-
+          {/* 필터 */}
+          <div>
             <span>공개여부</span>
             <select
               value={isPublished}
@@ -146,7 +157,7 @@ export default function AdRest() {
               <option value="true">공개</option>
               <option value="false">비공개</option>
             </select>
-
+            
             <span>데이터상태</span>
             <select
               value={dataStatus}
@@ -159,7 +170,7 @@ export default function AdRest() {
               <option value="BASIC">BASIC</option>
               <option value="VERIFIED">VERIFIED</option>
             </select>
-
+            
             <span>페이지당</span>
             <select
               value={limit}
@@ -172,14 +183,9 @@ export default function AdRest() {
               <option value={50}>50</option>
             </select>
           </div>
+        </article>
 
-          {/* 상태 */}
-          <div>
-            {loading && <p>Loading...</p>}
-            {!loading && errMsg && <p>{errMsg}</p>}
-            {!loading && !errMsg && <p>총 {total}개</p>}
-          </div>
-
+        <article>
           {/* 테이블 */}
           <div>
             <table border="1" cellPadding="8" cellSpacing="0" style={{ width: '100%', borderCollapse: 'collapse' }}>

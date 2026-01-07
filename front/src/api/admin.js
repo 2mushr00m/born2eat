@@ -146,7 +146,12 @@ export const AdminRestListApi = (params) => {
  *
  * @param {number} restaurantId
  */
-export const AdminRestaurantDetailApi = (restaurantId) => {
+export const AdminRestDetailApi = (restaurantId) => {
   if (!restaurantId) throw new Error('restaurantId is required');
   return api.get(`/admin/restaurants/${restaurantId}`);
 };
+
+export const AdminRestUpdateApi = (restaurantId) => {};
+
+export const AdminRestCreatePhotosApi = () => {};
+export const AdminRestDeletePhotoApi = () => {};

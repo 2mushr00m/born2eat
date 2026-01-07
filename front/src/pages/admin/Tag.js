@@ -1,11 +1,11 @@
-import React from "react";
-
 export default function AdTag(){
   return(
-    <div className="main">
-      <section className="main__wrap">
+    <div className="adMain">
+      <section className="adMain__wrap">
+        <article className="adMain__title">
+          <h1><span>●</span> 태그 목록</h1>
+        </article>
         <article>
-          <p>관리자페이지 - 태그전체</p>
         </article>
       </section>
     </div>

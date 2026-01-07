@@ -52,6 +52,8 @@ declare global {
       dataStatus?: RestaurantDataStatus;
     };
 
+    type CreatePhotosPayload = {};
+
     // ========== Service → Controller =======
     type Photo = {
       filePath: string;
@@ -117,8 +119,19 @@ declare global {
       total: number;
     };
 
-    // GET /restaurants/:restaurantId
-    type Detail = {
+    type LikedList = {
+      items: {
+        restaurantId: number;
+        name: string;
+        mainPhoto: string | null;
+        region: Region;
+      }[];
+      page: number;
+      limit: number;
+      total: number;
+    };
+
+    type DetailBase = {
       restaurantId: number;
       name: string;
       description: string | null;
@@ -136,6 +149,11 @@ declare global {
       reviewCount: number;
       likeCount: number;
 
+      viewerLiked?: boolean;
+    };
+
+    // GET /restaurants/:restaurantId
+    type Detail = RestaurantBase & {
       broadcasts: Broadcast[];
       photos: {
         main: Photo[];
@@ -144,25 +162,30 @@ declare global {
       };
       region: Region;
       tags: string[];
-
-      // ViewerLiked
-      viewerLiked?: boolean;
-
-      // Admin
-      isPublished?: boolean;
-      dataStatus?: RestaurantDataStatus;
     };
 
-    type LikedList = {
-      items: {
-        restaurantId: number;
-        name: string;
-        mainPhoto: string | null;
-        region: Region;
-      }[];
-      page: number;
-      limit: number;
-      total: number;
+    // GET /admin/restaurants/:restaurantId
+    type AdminDetail = DetailBase & {
+      photos: {
+        main: (PhotoBase & { photoId: number })[];
+        menuBoard: (PhotoBase & { photoId: number })[];
+        etc: (PhotoBase & { photoId: number })[];
+      };
+      tags: { tagId: number; code: string; name: string }[];
+      region: Region;
+      tags: string[];
+
+      isPublished: boolean;
+      dataStatus: RestaurantDataStatus;
+    };
+
+    type CreatedPhotos = {
+      createdCount: number;
+      photos: {
+        main: Photo[];
+        menuBoard: Photo[];
+        etc: Photo[];
+      };
     };
   }
 }

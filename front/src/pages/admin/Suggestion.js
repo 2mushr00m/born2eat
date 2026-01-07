@@ -119,12 +119,14 @@ export default function AdSugg() {
   }
 
   return (
-    <div className="main">
-      <section className="main__wrap">
-        <article>
+    <div className="adMain">
+      <section className="adMain__wrap">
+        <article className='adMain__title'>
           <div>
-            <h1>■ 문의목록</h1>
+            <h1><span>●</span> 문의 목록</h1>
           </div>
+        </article>
+        <article>
 
           {/* 검색/필터 */}
           <div

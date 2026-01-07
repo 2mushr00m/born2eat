@@ -64,11 +64,13 @@ declare global {
 
       // Detail
       tags?: {
+        // 추후 tagId로 바꾸는 게 좋을지도. 지금은 그냥 둠
         id: number;
         code: string;
         name: string;
       }[];
       photos?: {
+        // 추후 photoId로 바꾸는 게 좋을지도. 지금은 그냥 둠
         id: number;
         path: string;
         caption: string | null;

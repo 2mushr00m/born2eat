@@ -116,21 +116,31 @@ export default function AdSuggDetail() {
       await AdminInquiryAnswerApi(id, { answer });
 
       // 2) 성공 시 목록으로 이동
+      
       navigate('/admin/suggestion');
-    } catch (e) {
-      setErrMsg('답변 저장에 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
+      // 3) 재조회(가장 안전: status/answeredAt/answeredBy 갱신까지 한 번에 해결)
+      const { data } = await AdminInquiryDetailApi(id);
+      const it = data?.result ?? null;
+
+      setItem(it);
+      const ans = it?.answer ?? '';
+      setAnswerText(ans);
+      setOriginalAnswer(ans);
+      } catch (e) {
+        setErrMsg('답변 저장에 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
   }
 
   return (
-    <div className="main">
-      <section className="main__wrap">
+    <div className="adMain">
+      <section className="adMain__wrap">
+        <article className='adMain__title'>
+          <h1><span>●</span> 문의 상세정보</h1>
+        </article>
+
         <article>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <h1>■ 문의 상세</h1>
-          </div>
 
           {loading && <p>Loading...</p>}
           {!loading && errMsg && <p>{errMsg}</p>}

@@ -19,14 +19,6 @@
     text-align: center;
   }
 }
-.admin-theme {
-  .main {
-    margin-left: calc(170px + 3%);
-    &__wrap{
-    padding-top: 30px;
-    }
-  }
-}
 
 // header
 .header {
@@ -109,6 +101,10 @@
   position: absolute; top: 0; left: 0;
 
   &__wrap {
+    > h3{
+      color: $accent;
+      margin-top: 30px;
+    }
     ul{
       li{margin-top: 10px;}
       h3{margin-top: 30px;}

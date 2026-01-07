@@ -1713,7 +1713,7 @@ paths:
           in: path
           description: ''
           required: true
-          example: 15
+          example: 14
           schema:
             type: integer
         - name: Set-Cookie
@@ -1839,6 +1839,7 @@ paths:
           in: query
           description: 정렬 순서
           required: false
+          example: ''
           schema:
             type: string
             enum:
@@ -2222,6 +2223,86 @@ paths:
                           - $ref: '#/components/schemas/List'
                     required:
                       - result
+              example:
+                success: true
+                result:
+                  total: 2
+                  page: 1
+                  limit: 10
+                  items:
+                    - reviewId: 3
+                      restaurantId: 1
+                      restaurantName: 두부고을
+                      userId: 1
+                      userNickname: 김철수
+                      rating: 4
+                      content: 사진 포함 테스트
+                      isVisible: true
+                      createdAt: '2025-12-26T07:36:24.000Z'
+                      updatedAt: '2025-12-26T07:36:24.000Z'
+                      likeCount: 0
+                    - reviewId: 2
+                      restaurantId: 1
+                      restaurantName: 두부고을
+                      userId: 1
+                      userNickname: 김철수
+                      rating: 4
+                      content: 사진 없이 테스트
+                      isVisible: true
+                      createdAt: '2025-12-26T07:25:23.000Z'
+                      updatedAt: '2025-12-30T20:11:41.000Z'
+                      likeCount: 0
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /admin/reviews/{reviewId}:
+    get:
+      summary: 리뷰 상세보기
+      deprecated: false
+      description: ''
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: reviewId
+          in: path
+          description: 리뷰 PK
+          required: true
+          example: 3
+          schema:
+            type: integer
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        allOf:
+                          - $ref: '#/components/schemas/ReviewItem'
+                          - $ref: '#/components/schemas/ReviewDetail'
+                    required:
+                      - result
+              example: ''
           headers: {}
         '500':
           $ref: '#/components/responses/Internal'
@@ -2505,6 +2586,9 @@ components:
         restaurantId:
           type: integer
           description: 음식점 PK
+        restaurantName:
+          type: string
+          description: 음식점 이름
         userId:
           type: integer
           description: 작성자 PK
@@ -2546,6 +2630,7 @@ components:
         - isVisible
         - updatedAt
         - likeCount
+        - restaurantName
     ReviewDetail:
       type: object
       properties:
@@ -2646,7 +2731,7 @@ components:
         tags:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/RestaurantTag'
           description: 태그 목록
         region:
           type: object
@@ -2820,7 +2905,7 @@ components:
         tags:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/RestaurantTag'
           description: 태그 목록
         region:
           type: object
@@ -2865,6 +2950,9 @@ components:
     RestaurantPhoto:
       type: object
       properties:
+        photoId:
+          type: integer
+          description: 사진 PK (관리자 전용)
         filePath:
           type: string
           description: 사진 경로
@@ -2895,6 +2983,24 @@ components:
         - createdAt
         - sourceType
         - sourceUserNickname
+    RestaurantTag:
+      anyOf:
+        - type: string
+        - type: object
+          properties:
+            tagId:
+              type: integer
+              description: 태그 PK
+            code:
+              type: string
+              description: 코드
+            name:
+              type: string
+              description: 태그명
+          required:
+            - tagId
+            - code
+            - name
     RestaurantAdmin:
       type: object
       properties:

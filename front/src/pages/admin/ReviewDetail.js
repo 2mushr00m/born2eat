@@ -119,13 +119,12 @@ export default function AdReviewDetail() {
   }
 
   return (
-    <div className="main">
-      <section className="main__wrap">
+    <div className="adMain">
+      <section className="adMain__wrap">
+        <article className='adMain__title'>
+          <h1><span>●</span> 리뷰 상세정보</h1>
+        </article>
         <article>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <h1 style={{ margin: 0 }}>■ 리뷰상세</h1>
-          </div>
-
           {loading && <p>Loading...</p>}
           {!loading && errMsg && <p>{errMsg}</p>}
           {!loading && !errMsg && !item && <p>데이터가 없습니다.</p>}

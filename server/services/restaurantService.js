@@ -121,6 +121,270 @@ async function resolveFoodTagId(foodCode) {
   }
 }
 
+/** 내부 헬퍼: restaurant 기본 row 조회 (PUBLIC/ADMIN 공용)
+ * @param {import('mysql2/promise').PoolConnection} conn
+ * @param {number} restaurantId
+ * @returns {Promise<any|null>}
+ */
+async function fetchRestaurantBaseRow(conn, restaurantId) {
+  const [rows] = await conn.execute(
+    `
+    SELECT
+      r.restaurant_id AS restaurantId,
+      r.name,
+      r.description,
+      r.kakao_place_id AS kakaoPlaceId,
+      r.main_food AS mainFood,
+      r.phone,
+      r.address,
+      r.longitude,
+      r.latitude,
+      r.rating_sum AS ratingSum,
+      r.review_count AS reviewCount,
+      r.is_published AS isPublishedInt,
+      r.data_status AS dataStatus,
+      r.region_code AS regionCode,
+      tf.name AS foodCategory,
+      COALESCE(rl.like_count, 0) AS likeCount,
+      COALESCE(rg1.name, rg2.name) AS regionDepth1,
+      CASE WHEN rg1.name IS NOT NULL THEN rg2.name ELSE NULL END AS regionDepth2
+    FROM restaurant r
+    LEFT JOIN tag tf ON tf.tag_id = r.food_tag_id
+    LEFT JOIN region rg2 ON rg2.region_code = r.region_code
+    LEFT JOIN region rg1 ON rg1.region_code = rg2.parent_code
+    LEFT JOIN (
+      SELECT restaurant_id, COUNT(*) AS like_count
+      FROM restaurant_like
+      GROUP BY restaurant_id
+    ) rl ON rl.restaurant_id = r.restaurant_id
+    WHERE r.restaurant_id = :restaurantId
+    LIMIT 1
+    `,
+    { restaurantId },
+  );
+
+  return rows?.[0] ?? null;
+}
+
+/** 내부 헬퍼: Detail/AdminDetail 공통 base 매핑
+ * - PUBLIC/ADMIN 공통 필드만 세팅
+ * @param {any} row
+ * @returns {restaurant.Detail}
+ */
+function mapRestaurantBaseDetail(row) {
+  /** @type {restaurant.Detail} */
+  const detail = {
+    restaurantId: Number(row.restaurantId),
+    name: row.name,
+    description: row.description ?? null,
+    kakaoPlaceId: row.kakaoPlaceId ?? null,
+
+    foodCategory: row.foodCategory ?? null,
+    mainFood: row.mainFood ?? null,
+    phone: row.phone ?? null,
+    address: row.address ?? null,
+
+    longitude: row.longitude != null ? Number(row.longitude) : null,
+    latitude: row.latitude != null ? Number(row.latitude) : null,
+
+    ratingSum: row.ratingSum != null ? Number(row.ratingSum) : 0,
+    reviewCount: row.reviewCount != null ? Number(row.reviewCount) : 0,
+    likeCount: row.likeCount != null ? Number(row.likeCount) : 0,
+
+    region: {
+      code: row.regionCode ?? null,
+      depth1: row.regionDepth1 ?? null,
+      depth2: row.regionDepth2 ?? null,
+    },
+
+    tags: [], // attachTagsPublic에서 채움
+    photos: { main: [], menuBoard: [], etc: [] }, // attachPhotos에서 채움
+    broadcasts: [], // attachBroadcasts에서 채움
+  };
+
+  return detail;
+}
+
+/** PUBLIC 태그 attach (string[])
+ * @param {import('mysql2/promise').PoolConnection} conn
+ * @param {number} restaurantId
+ * @param {restaurant.Detail} detail
+ */
+async function attachTagsPublic(conn, restaurantId, detail) {
+  const [tagRows] = await conn.execute(
+    `
+    SELECT t.name
+    FROM restaurant_tag rt
+    JOIN tag t ON t.tag_id = rt.tag_id
+    WHERE rt.restaurant_id = :restaurantId
+      AND t.type = 'tag'
+    ORDER BY t.click_count DESC, t.usage_count DESC
+    `,
+    { restaurantId },
+  );
+
+  detail.tags = (tagRows ?? []).map((r) => r.name);
+}
+
+/** ADMIN 태그 attach (object[])
+ * @param {import('mysql2/promise').PoolConnection} conn
+ * @param {number} restaurantId
+ * @param {restaurant.AdminDetail} detail
+ */
+async function attachTagsAdmin(conn, restaurantId, detail) {
+  const [tagRows] = await conn.execute(
+    `
+    SELECT
+      t.tag_id AS tagId,
+      t.code,
+      t.name
+    FROM restaurant_tag rt
+    JOIN tag t ON t.tag_id = rt.tag_id
+    WHERE rt.restaurant_id = :restaurantId
+      AND t.type = 'tag'
+    ORDER BY t.click_count DESC, t.usage_count DESC
+    `,
+    { restaurantId },
+  );
+
+  detail.tags = (tagRows ?? []).map((r) => ({
+    tagId: Number(r.tagId),
+    code: r.code,
+    name: r.name,
+  }));
+}
+
+/** 사진 attach (PUBLIC/ADMIN 공용)
+ * - withId=true면 photoId 포함(ADMIN)
+ * @param {import('mysql2/promise').PoolConnection} conn
+ * @param {number} restaurantId
+ * @param {any} detail
+ * @param {{ withId?: boolean }} opt
+ */
+async function attachPhotos(conn, restaurantId, detail, opt = {}) {
+  const { withId = false } = opt;
+
+  const [photoRows] = await conn.execute(
+    `
+    SELECT
+      ${withId ? 'p.photo_id AS photoId,' : ''}
+      p.photo_type AS photoType,
+      p.file_path AS filePath,
+      p.caption,
+      p.created_at AS createdAt,
+      p.source_type AS sourceType,
+      u.nickname AS sourceUserNickname
+    FROM restaurant_photo p
+    LEFT JOIN user u ON u.user_id = p.source_user_id
+    WHERE p.restaurant_id = :restaurantId
+    ORDER BY
+      p.photo_type ASC,
+      p.sort_order ASC,
+      p.created_at DESC
+    `,
+    { restaurantId },
+  );
+
+  for (const p of photoRows ?? []) {
+    /** @type {any} */
+    const photo = {
+      ...(withId ? { photoId: Number(p.photoId) } : {}),
+      filePath: p.filePath,
+      caption: p.caption ?? null,
+      createdAt: p.createdAt,
+      sourceType: p.sourceType,
+      sourceUserNickname: p.sourceType === RESTAURANT_PHOTO_SOURCE.USER ? (p.sourceUserNickname ?? null) : null,
+    };
+
+    if (p.photoType === RESTAURANT_PHOTO_TYPE.MAIN) detail.photos.main.push(photo);
+    else if (p.photoType === RESTAURANT_PHOTO_TYPE.MENU_BOARD) detail.photos.menuBoard.push(photo);
+    else detail.photos.etc.push(photo);
+  }
+}
+
+/** 방송 attach (PUBLIC/ADMIN 공용)
+ * @param {import('mysql2/promise').PoolConnection} conn
+ * @param {number} restaurantId
+ * @param {restaurant.Detail} detail
+ */
+async function attachBroadcasts(conn, restaurantId, detail) {
+  const [brRows] = await conn.execute(
+    `
+    SELECT
+      br.broadcast_id AS broadcastId,
+      b.name AS broadcastName,
+      br.episode_no AS episodeNo,
+      be.aired_at AS airedAt
+    FROM broadcast_restaurant br
+    JOIN broadcast b ON b.broadcast_id = br.broadcast_id
+    LEFT JOIN broadcast_episode be
+      ON be.broadcast_id = br.broadcast_id
+    AND be.episode_no = br.episode_no
+    WHERE br.restaurant_id = :restaurantId
+    ORDER BY be.aired_at DESC, br.episode_no DESC
+    `,
+    { restaurantId },
+  );
+
+  if (!brRows?.length) {
+    detail.broadcasts = [];
+    return;
+  }
+
+  const broadcastIds = Array.from(new Set(brRows.map((r) => r.broadcastId)));
+  const bidParams = broadcastIds.reduce((acc, bid, i) => ((acc[`bid_${i}`] = bid), acc), {});
+  const bidIn = broadcastIds.map((_, i) => `:bid_${i}`).join(', ');
+
+  // OTT
+  const [ottRows] = await conn.execute(
+    `
+    SELECT broadcast_id AS broadcastId, platform, ott_url AS ottUrl
+    FROM broadcast_ott
+    WHERE broadcast_id IN (${bidIn})
+    `,
+    bidParams,
+  );
+
+  const ottByBid = new Map();
+  for (const bid of broadcastIds) ottByBid.set(bid, { NETFLIX: null, TVING: null, WAVVE: null, WATCHA: null });
+
+  for (const o of ottRows ?? []) {
+    const ott = ottByBid.get(o.broadcastId);
+    if (!ott) continue;
+
+    if (o.platform === BROADCAST_OTT.NETFLIX) ott.NETFLIX = o.ottUrl;
+    else if (o.platform === BROADCAST_OTT.TVING) ott.TVING = o.ottUrl;
+    else if (o.platform === BROADCAST_OTT.WAVVE) ott.WAVVE = o.ottUrl;
+    else if (o.platform === BROADCAST_OTT.WATCHA) ott.WATCHA = o.ottUrl;
+  }
+
+  // YouTube
+  const [ytRows] = await conn.execute(
+    `
+    SELECT broadcast_id AS broadcastId, episode_no AS episodeNo, youtube_url AS youtubeUrl
+    FROM broadcast_youtube
+    WHERE broadcast_id IN (${bidIn})
+    `,
+    bidParams,
+  );
+
+  const ytByKey = new Map(); // `${broadcastId}:${episodeNo}` -> string[]
+  for (const y of ytRows ?? []) {
+    const key = `${y.broadcastId}:${y.episodeNo}`;
+    const arr = ytByKey.get(key) ?? [];
+    arr.push(y.youtubeUrl);
+    ytByKey.set(key, arr);
+  }
+
+  detail.broadcasts = brRows.map((br) => ({
+    name: br.broadcastName ?? null,
+    episodeNo: br.episodeNo ?? null,
+    airedAt: br.airedAt ?? null,
+    ott: ottByBid.get(br.broadcastId) ?? { NETFLIX: null, TVING: null, WAVVE: null, WATCHA: null },
+    youtube: ytByKey.get(`${br.broadcastId}:${br.episodeNo}`) ?? [],
+  }));
+}
+
 /** viewerLiked attach
  * @param {import('mysql2/promise').PoolConnection} conn
  * @param {restaurant.Item[]} items
@@ -402,219 +666,25 @@ export async function readRestaurantList(filter, opt = {}) {
   }
 }
 
-/** 음식점 상세 조회
+/** 음식점 상세 조회 (PUBLIC)
  * @param {number} restaurantId
- * @param {{ mode?: 'PUBLIC' | 'ADMIN', viewerId?: number, include?: { viewerLiked?: boolean } }} [opt]
+ * @param {{ viewerId?: number, include?: { viewerLiked?: boolean } }} [opt]
  * @returns {Promise<restaurant.Detail>}
  */
 export async function readRestaurant(restaurantId, opt = {}) {
-  const { mode = 'PUBLIC', viewerId, include } = opt;
-  const isAdmin = mode === 'ADMIN';
+  const { viewerId, include } = opt;
   const conn = await db.getConnection();
 
   try {
     // 1) 기본
-    const [rows] = await conn.execute(
-      `
-      SELECT
-        r.restaurant_id AS restaurantId,
-        r.name,
-        r.description,
-        r.kakao_place_id AS kakaoPlaceId,
-        r.main_food AS mainFood,
-        r.phone,
-        r.address,
-        r.longitude,
-        r.latitude,
-        r.rating_sum AS ratingSum,
-        r.review_count AS reviewCount,
-        r.is_published AS isPublishedInt,
-        r.data_status AS dataStatus,
-        r.region_code AS regionCode,
-        tf.name AS foodCategory,
-        COALESCE(rl.like_count, 0) AS likeCount,
-        COALESCE(rg1.name, rg2.name) AS regionDepth1,
-        CASE WHEN rg1.name IS NOT NULL THEN rg2.name ELSE NULL END AS regionDepth2
-      FROM restaurant r
-      LEFT JOIN tag tf ON tf.tag_id = r.food_tag_id
-      LEFT JOIN region rg2 ON rg2.region_code = r.region_code
-      LEFT JOIN region rg1 ON rg1.region_code = rg2.parent_code
-      LEFT JOIN (
-        SELECT restaurant_id, COUNT(*) AS like_count
-        FROM restaurant_like
-        GROUP BY restaurant_id
-      ) rl ON rl.restaurant_id = r.restaurant_id
-      WHERE r.restaurant_id = :restaurantId
-      LIMIT 1
-      `,
-      { restaurantId },
-    );
-
-    const row = rows?.[0];
-    if (!row || (!isAdmin && row.isPublishedInt !== 1))
+    const row = await fetchRestaurantBaseRow(conn, restaurantId);
+    if (!row || row.isPublishedInt !== 1)
       throw new AppError(ERR.NOT_FOUND, { message: '해당 음식점을 찾을 수 없습니다.' });
 
-    /** @type {restaurant.Detail} */
-    const detail = {
-      restaurantId: Number(row.restaurantId),
-      name: row.name,
-      description: row.description ?? null,
-      kakaoPlaceId: row.kakaoPlaceId ?? null,
-
-      foodCategory: row.foodCategory ?? null,
-      mainFood: row.mainFood ?? null,
-      phone: row.phone ?? null,
-      address: row.address ?? null,
-
-      longitude: row.longitude != null ? Number(row.longitude) : null,
-      latitude: row.latitude != null ? Number(row.latitude) : null,
-
-      ratingSum: row.ratingSum != null ? Number(row.ratingSum) : 0,
-      reviewCount: row.reviewCount != null ? Number(row.reviewCount) : 0,
-      likeCount: row.likeCount != null ? Number(row.likeCount) : 0,
-
-      region: {
-        code: row.regionCode ?? null,
-        depth1: row.regionDepth1 ?? null,
-        depth2: row.regionDepth2 ?? null,
-      },
-
-      tags: [], // 2에서 채움
-      photos: { main: [], menuBoard: [], etc: [] }, // 3에서 채움
-      broadcasts: [], // 4에서 채움
-
-      ...(isAdmin
-        ? {
-            isPublished: row.isPublishedInt === 1,
-            dataStatus: row.dataStatus,
-          }
-        : {}),
-    };
-
-    // 2) 태그 목록
-    const [tagRows] = await conn.execute(
-      `
-      SELECT t.name
-      FROM restaurant_tag rt
-      JOIN tag t ON t.tag_id = rt.tag_id
-      WHERE rt.restaurant_id = :restaurantId
-        AND t.type = 'tag'
-      ORDER BY t.click_count DESC, t.usage_count DESC
-      `,
-      { restaurantId },
-    );
-    detail.tags = (tagRows ?? []).map((r) => r.name);
-
-    // 3) 사진 그룹
-    const [photoRows] = await conn.execute(
-      `
-      SELECT
-        p.photo_type AS photoType,
-        p.file_path AS filePath,
-        p.caption,
-        p.created_at AS createdAt,
-        p.source_type AS sourceType,
-        u.nickname AS sourceUserNickname
-      FROM restaurant_photo p
-      LEFT JOIN user u ON u.user_id = p.source_user_id
-      WHERE p.restaurant_id = :restaurantId
-      ORDER BY
-        p.photo_type ASC,
-        p.sort_order ASC,
-        p.created_at DESC
-      `,
-      { restaurantId },
-    );
-
-    for (const p of photoRows ?? []) {
-      /** @type {restaurant.Photo} */
-      const photo = {
-        filePath: p.filePath,
-        caption: p.caption ?? null,
-        createdAt: p.createdAt,
-        sourceType: p.sourceType,
-        sourceUserNickname: p.sourceType === RESTAURANT_PHOTO_SOURCE.USER ? (p.sourceUserNickname ?? null) : null,
-      };
-
-      if (p.photoType === RESTAURANT_PHOTO_TYPE.MAIN) detail.photos.main.push(photo);
-      else if (p.photoType === RESTAURANT_PHOTO_TYPE.MENU_BOARD) detail.photos.menuBoard.push(photo);
-      else detail.photos.etc.push(photo);
-    }
-
-    // 4) 방송 정보 + ott/youtube
-    const [brRows] = await conn.execute(
-      `
-      SELECT
-        br.broadcast_id AS broadcastId,
-        b.name AS broadcastName,
-        br.episode_no AS episodeNo,
-        be.aired_at AS airedAt
-      FROM broadcast_restaurant br
-      JOIN broadcast b ON b.broadcast_id = br.broadcast_id
-      LEFT JOIN broadcast_episode be
-        ON be.broadcast_id = br.broadcast_id
-      AND be.episode_no = br.episode_no
-      WHERE br.restaurant_id = :restaurantId
-      ORDER BY be.aired_at DESC, br.episode_no DESC
-      `,
-      { restaurantId },
-    );
-
-    if (brRows?.length) {
-      const broadcastIds = Array.from(new Set(brRows.map((r) => r.broadcastId)));
-      const bidParams = broadcastIds.reduce((acc, bid, i) => ((acc[`bid_${i}`] = bid), acc), {});
-      const bidIn = broadcastIds.map((_, i) => `:bid_${i}`).join(', ');
-
-      // 4-1) OTT: broadcastId 기준으로 모으기
-      const [ottRows] = await conn.execute(
-        `
-        SELECT broadcast_id AS broadcastId, platform, ott_url AS ottUrl
-        FROM broadcast_ott
-        WHERE broadcast_id IN (${bidIn})
-        `,
-        bidParams,
-      );
-
-      const ottByBid = new Map();
-      for (const bid of broadcastIds) ottByBid.set(bid, { NETFLIX: null, TVING: null, WAVVE: null, WATCHA: null });
-
-      for (const o of ottRows ?? []) {
-        const ott = ottByBid.get(o.broadcastId);
-        if (!ott) continue;
-
-        if (o.platform === BROADCAST_OTT.NETFLIX) ott.NETFLIX = o.ottUrl;
-        else if (o.platform === BROADCAST_OTT.TVING) ott.TVING = o.ottUrl;
-        else if (o.platform === BROADCAST_OTT.WAVVE) ott.WAVVE = o.ottUrl;
-        else if (o.platform === BROADCAST_OTT.WATCHA) ott.WATCHA = o.ottUrl;
-      }
-
-      // 4-2) YouTube: (broadcastId, episodeNo) 기준으로 모으기
-      const [ytRows] = await conn.execute(
-        `
-        SELECT broadcast_id AS broadcastId, episode_no AS episodeNo, youtube_url AS youtubeUrl
-        FROM broadcast_youtube
-        WHERE broadcast_id IN (${bidIn})
-        `,
-        bidParams,
-      );
-
-      const ytByKey = new Map(); // key = `${broadcastId}:${episodeNo}` -> string[]
-      for (const y of ytRows ?? []) {
-        const key = `${y.broadcastId}:${y.episodeNo}`;
-        const arr = ytByKey.get(key) ?? [];
-        arr.push(y.youtubeUrl);
-        ytByKey.set(key, arr);
-      }
-
-      // 4-3) Broadcast[]로 매핑
-      detail.broadcasts = brRows.map((br) => ({
-        name: br.broadcastName ?? null,
-        episodeNo: br.episodeNo ?? null,
-        airedAt: br.airedAt ?? null,
-        ott: ottByBid.get(br.broadcastId) ?? { NETFLIX: null, TVING: null, WAVVE: null, etc: null },
-        youtube: ytByKey.get(`${br.broadcastId}:${br.episodeNo}`) ?? [],
-      }));
-    }
+    const detail = mapRestaurantBaseDetail(row);
+    await attachTagsPublic(conn, restaurantId, detail);
+    await attachPhotos(conn, restaurantId, detail, { withId: false });
+    await attachBroadcasts(conn, restaurantId, detail);
 
     if (include?.viewerLiked) {
       await attachViewerLiked(conn, [detail], [restaurantId], viewerId);
@@ -626,6 +696,53 @@ export async function readRestaurant(restaurantId, opt = {}) {
     throw new AppError(ERR.DB, {
       message: '음식점 상세 조회 중 오류가 발생했습니다.',
       data: { targetId: restaurantId, keys: ['restaurantId', 'mode'], dbCode: err?.code, extra: { mode } },
+      cause: err,
+    });
+  } finally {
+    conn.release();
+  }
+}
+
+/** 음식점 상세 조회 (ADMIN)
+ * @param {number} restaurantId
+ * @param {{ viewerId?: number, include?: { viewerLiked?: boolean } }} [opt]
+ * @returns {Promise<restaurant.AdminDetail>}
+ */
+export async function readRestaurantAdmin(restaurantId, opt = {}) {
+  const { viewerId, include } = opt;
+  const conn = await db.getConnection();
+
+  try {
+    const row = await fetchRestaurantBaseRow(conn, restaurantId);
+    if (!row) throw new AppError(ERR.NOT_FOUND, { message: '해당 음식점을 찾을 수 없습니다.' });
+
+    /** @type {restaurant.AdminDetail} */
+    const detail = {
+      ...mapRestaurantBaseDetail(row),
+
+      // ADMIN 전용 필드
+      isPublished: row.isPublishedInt === 1,
+      dataStatus: row.dataStatus,
+
+      // ADMIN 전용 타입으로 덮어씌울 예정
+      tags: [],
+      photos: { main: [], menuBoard: [], etc: [] },
+    };
+
+    await attachTagsAdmin(conn, restaurantId, detail);
+    await attachPhotos(conn, restaurantId, detail, { withId: true });
+    await attachBroadcasts(conn, restaurantId, detail);
+
+    if (include?.viewerLiked) {
+      await attachViewerLiked(conn, [detail], [restaurantId], viewerId);
+    }
+
+    return detail;
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    throw new AppError(ERR.DB, {
+      message: '음식점 상세 조회(관리자) 중 오류가 발생했습니다.',
+      data: { targetId: restaurantId, keys: ['restaurantId'], dbCode: err?.code },
       cause: err,
     });
   } finally {
@@ -997,3 +1114,17 @@ export async function unlikeRestaurant(restaurantId, userId) {
     conn.release();
   }
 }
+
+/** 음식점 사진 추가
+ * @param {number} restaurantId
+ * @param {restaurant.} payload
+ * @returns {Promise<restaurant.CreatedPhotos>}
+ */
+export async function createRestaurantPhotos(restaurantId, payload) {}
+
+/** 음식점 사진 삭제
+ * @param {number} restaurantId
+ * @param {number} photoId
+ * @returns {Promise<void>}
+ */
+export async function deleteRestaurantPhoto(restaurantId, photoId) {}

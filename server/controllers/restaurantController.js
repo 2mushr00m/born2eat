@@ -7,16 +7,20 @@ import {
   buildMyLikesFilter,
   buildCreatePayload,
   buildUpdatePayload,
+  buildCreatePhotosPayload,
 } from './requests/restaurantRequest.js';
 import {
   readRestaurantList,
   readRestaurant,
+  readRestaurantAdmin,
   createRestaurant,
   updateRestaurant,
   deleteRestaurant,
   likeRestaurant,
   unlikeRestaurant,
   readLikedRestaurantList,
+  createRestaurantPhotos,
+  deleteRestaurantPhoto,
 } from '../services/restaurantService.js';
 import { syncKakaoByRange } from '../services/kakaoApiService.js';
 
@@ -34,7 +38,7 @@ export const list = wrap(async (req, res) => {
 export const read = wrap(async (req, res) => {
   const viewerId = req.user?.userId ?? null;
   const restaurantId = parseId(req.params?.restaurantId);
-  const result = await readRestaurant(restaurantId, { mode: 'PUBLIC', viewerId, include: { viewerLiked: true } });
+  const result = await readRestaurant(restaurantId, { viewerId, include: { viewerLiked: true } });
   ok(res, result);
 });
 
@@ -76,7 +80,7 @@ export const adminList = wrap(async (req, res) => {
 /** GET /admin/restaurants/:restaurantId */
 export const adminRead = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
-  const result = await readRestaurant(restaurantId, { mode: 'ADMIN', include: { viewerLiked: false } });
+  const result = await readRestaurantAdmin(restaurantId, { include: { viewerLiked: false } });
   ok(res, result);
 });
 
@@ -102,6 +106,22 @@ export const adminDestroy = wrap(async (req, res) => {
   ok(res);
 });
 
+/** POST /restaurants/:restaurantId/photos */
+export const adminCreatePhotos = wrap(async (req, res) => {
+  const restaurantId = parseId(req.params?.restaurantId);
+  const payload = buildCreatePhotosPayload(req);
+  const result = await createRestaurantPhotos(restaurantId, payload);
+  created(res, result);
+});
+
+/** DELETE /restaurants/:restaurantId/photos/:photoId */
+export const adminDestroyPhotos = wrap(async (req, res) => {
+  const restaurantId = parseId(req.params?.restaurantId);
+  const photoId = parseId(req.params?.photoId);
+  await deleteRestaurantPhoto(restaurantId, photoId);
+  ok(res);
+});
+
 /** POST /admin/restaurants/sync-kakao */
 export const adminSyncKakao = wrap(async (req, res) => {
   const startId = parseId(req.body?.startId);
@@ -120,12 +140,6 @@ export const putTags = wrap(async (req, res) => {
 
 /** DELETE /restaurants/:restaurantId/tags/:tagCode */
 export const deleteTag = wrap(async (req, res) => {
-  const restaurantId = parseId(req.params?.restaurantId);
-  ok(res);
-});
-
-/** PATCH /restaurants/:restaurantId/photos */
-export const patchPhotos = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
   ok(res);
 });

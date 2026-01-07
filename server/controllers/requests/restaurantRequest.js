@@ -199,3 +199,6 @@ export function buildUpdatePayload(req) {
 
   return payload;
 }
+
+/** 사진 생성 payload */
+export function buildCreatePhotosPayload(req) {}
