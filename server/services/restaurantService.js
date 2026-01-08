@@ -804,6 +804,7 @@ export async function updateRestaurant(restaurantId, payload) {
   if ('name' in payload) set.push('name = :name');
   if ('kakaoPlaceId' in payload) set.push('kakao_place_id = :kakaoPlaceId');
   if ('regionCode' in payload) set.push('region_code = :regionCode');
+  if ('description' in payload) set.push('description = :description');
   if ('foodTagCode' in payload) {
     patch.foodTagId = await resolveFoodTagId(payload.foodTagCode);
     set.push('food_tag_id = :foodTagId');

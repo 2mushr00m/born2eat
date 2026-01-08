@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import KakaoMap from './KakaoMap';
+import NoPhoto from './NoPhoto';
+import { apiImageUrl } from '../../../api/upload';
 
 function isValidLatLng(it) {
   const lat = Number(it?.latitude);
@@ -59,12 +61,13 @@ export default function HomeMap({ list }) {
                   tabIndex={0}
                   aria-pressed={isSelected}
                   onClick={() => onSelect(t.restaurantId)}>
-                  <div
-                    className="card-image"
-                    style={{
-                      backgroundImage: `url(${t.mainPhoto || `https://picsum.photos/800/600?random=${i}`})`,
-                    }}
-                  />
+                  {t.mainPhoto ? (
+                    <div className="card-image" style={{ backgroundImage: `url(${apiImageUrl(t.mainPhoto)})` }} />
+                  ) : (
+                    <div className="card-image">
+                      <NoPhoto />
+                    </div>
+                  )}
                   <div className="card-body">
                     <div>
                       <h3 style={{ margin: 0 }}>{t.name}</h3>
