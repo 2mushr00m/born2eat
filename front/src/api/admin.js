@@ -146,12 +146,58 @@ export const AdminRestListApi = (params) => {
  *
  * @param {number} restaurantId
  */
-export const AdminRestDetailApi = (restaurantId) => {
+export const getRest = (restaurantId) => {
   if (!restaurantId) throw new Error('restaurantId is required');
   return api.get(`/admin/restaurants/${restaurantId}`);
 };
 
-export const AdminRestUpdateApi = (restaurantId) => {};
+/** 관리자 음식점 기본 수정
+ * PATCH /admin/restaurants/:restaurantId/
+ *
+ * @param {number} restaurantId
+ * @param {{
+ *  name?: string,
+ *  longitude?: number|null,
+ *  latitude?: number|null,
+ *  kakaoPlaceId?: string|null,
+ *  description?: string|null,
+ *  regionCode?: string|null,
+ *  foodTagCode?: string|null,
+ *  mainFood?: string|null,
+ *  phone?: string|null,
+ *  address?: string|null,
+ *  isPublished?: boolean,
+ *  dataStatus?: 'RAW'|'BASIC'|'VERIFIED'
+ * }} [params]
+ */
+export const patchRestBase = (restaurantId, params) => {
+  if (!restaurantId) throw new Error('restaurantId is required');
 
-export const AdminRestCreatePhotosApi = () => {};
-export const AdminRestDeletePhotoApi = () => {};
+  const body = params ?? {};
+  if (!body || Object.keys(body).length === 0) {
+    throw new Error('params is empty');
+  }
+
+  return api.patch(`/admin/restaurants/${restaurantId}`, body);
+};
+
+/** 관리자 음식점 사진 추가
+ * POST /admin/restaurants/:restaurantId/photos
+ */
+export const postRestPhotos = (restaurantId, formData) => {
+  if (!restaurantId) throw new Error('restaurantId is required');
+
+  return api.post(`/admin/restaurants/${restaurantId}/photos`, formData);
+};
+
+/** 관리자 음식점 사진 단건 삭제
+ * DELETE /admin/restaurants/:restaurantId/photos/:photoId
+ *
+ * @param {number} restaurantId
+ * @param {number} photoId
+ */
+export const deleteRestPhotos = (restaurantId, photoId) => {
+  if (!restaurantId) throw new Error('restaurantId is required');
+  if (!photoId) throw new Error('photoId is required');
+  return api.delete(`/admin/restaurants/${restaurantId}/photos/${photoId}`);
+};

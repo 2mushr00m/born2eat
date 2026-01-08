@@ -1949,6 +1949,55 @@ paths:
           schema:
             type: string
             default: '{{Set-Cookie}}'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 가게명
+                kakaoPlaceId:
+                  type: string
+                  description: 카카오맵
+                description:
+                  type: string
+                  description: 설명
+                regionCode:
+                  type: string
+                  description: 법정동 코드
+                foodTagCode:
+                  type: string
+                  description: 음식 분류 코드
+                mainFood:
+                  type: string
+                  description: 대표 음식
+                phone:
+                  type: string
+                  description: 전화번호
+                address:
+                  type: string
+                  description: 주소
+                dataStatus:
+                  type: string
+                  description: 데이터 품질
+                  enum:
+                    - RAW
+                    - BASIC
+                    - VERIFIED
+                isPublished:
+                  type: boolean
+                  description: 공개 여부
+                longitude:
+                  type: number
+                  description: 경도
+                latitude:
+                  type: number
+                  description: 위도
+              required:
+                - name
+            examples: {}
       responses:
         '200':
           description: ''
@@ -2018,6 +2067,45 @@ paths:
           $ref: '#/components/responses/Internal'
           description: ''
       security: []
+    delete:
+      summary: 음식점 삭제
+      deprecated: false
+      description: ''
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: restaurantId
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: string
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseSuccess'
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
   /admin/restaurants/{restaurantsId}:
     patch:
       summary: 음식점 수정
@@ -2052,8 +2140,65 @@ paths:
           application/json:
             schema:
               type: object
-              description: 문의 답변 payload (추후 갱신)
-              properties: {}
+              properties:
+                name:
+                  type: string
+                  description: 가게명
+                kakaoPlaceId:
+                  type:
+                    - string
+                    - 'null'
+                  description: 카카오맵
+                description:
+                  type:
+                    - string
+                    - 'null'
+                  description: 설명
+                regionCode:
+                  type:
+                    - string
+                    - 'null'
+                  description: 법정동 코드
+                foodTagCode:
+                  type:
+                    - string
+                    - 'null'
+                  description: 음식 분류 코드
+                mainFood:
+                  type:
+                    - string
+                    - 'null'
+                  description: 대표 음식
+                phone:
+                  type:
+                    - string
+                    - 'null'
+                  description: 전화번호
+                address:
+                  type:
+                    - string
+                    - 'null'
+                  description: 주소
+                dataStatus:
+                  type: string
+                  description: 데이터 품질
+                  enum:
+                    - RAW
+                    - BASIC
+                    - VERIFIED
+                isPublished:
+                  type: boolean
+                  description: 공개 여부
+                longitude:
+                  type:
+                    - number
+                    - 'null'
+                  description: 경도
+                latitude:
+                  type:
+                    - number
+                    - 'null'
+                  description: 위도
             examples: {}
         required: true
       responses:
@@ -2067,8 +2212,7 @@ paths:
                   - type: object
                     properties:
                       result:
-                        type: object
-                        properties: {}
+                        $ref: '#/components/schemas/Id'
                     required:
                       - result
           headers: {}
@@ -2076,8 +2220,89 @@ paths:
           $ref: '#/components/responses/Internal'
           description: ''
       security: []
+  /admin/restaurants/{restaurantId}/photos:
+    post:
+      summary: 음식점 사진 생성
+      deprecated: false
+      description: |-
+        - photos: 업로드할 이미지 파일
+        - meta: photos와 1:1 인덱스 매칭되는 JSON 배열 문자열
+          - photoType: MAIN | MENU_BOARD | ETC
+          - sortOrder: integer | null, 0~127 범위. 낮을수록 먼저 표시
+          - caption: string | null
+      tags:
+        - Admin
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: restaurantId
+          in: path
+          description: 음식점 PK
+          required: true
+          schema:
+            type: integer
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photos:
+                  format: binary
+                  type: string
+                  description: 사진 첨부
+                  example: ''
+                meta:
+                  description: JSON 문자열
+                  example: >-
+                    [  {    "photoType": "MAIN",    "sortOrder": 1,   
+                    "caption": "대표"  },  {    "photoType": "MENU_BOARD",   
+                    "sortOrder": null,    "caption": "메뉴판"  }]
+                  type: string
+              required:
+                - photos
+                - meta
+            examples: {}
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseSuccess'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          createdCount:
+                            type: integer
+                            description: 추가 개수
+                        required:
+                          - createdCount
+                    required:
+                      - result
+          headers: {}
+        '500':
+          $ref: '#/components/responses/Internal'
+          description: ''
+      security: []
+  /admin/restaurants/{restaurantId}/photos/{photoId}:
     delete:
-      summary: 음식점 삭제
+      summary: 음식점 사진 삭제
       deprecated: false
       description: ''
       tags:
@@ -2090,11 +2315,16 @@ paths:
           schema:
             type: string
             default: '{{born2eat.sid}}'
-        - name: restaurantsId
+        - name: restaurantId
           in: path
           description: ''
           required: true
-          example: 0
+          schema:
+            type: integer
+        - name: photoId
+          in: path
+          description: ''
+          required: true
           schema:
             type: integer
         - name: Set-Cookie

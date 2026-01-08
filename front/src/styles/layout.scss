@@ -3,9 +3,7 @@
 // layout
 .user-theme,
 .admin-theme {
-  background: $bg-page;
-  color: $text;
-
+  background: $bg-page; color: $text;
   main {
     max-width: 1600px; min-height: calc(100vh - 100px);
     margin: 0 auto; padding: 0 3%;
@@ -14,10 +12,18 @@
   }
 }
 .user-theme {
-  .main {
-    padding-top: 50px;
-    text-align: center;
-  }
+  html, body { overflow-x: clip; }
+  .main { padding-top: 50px; text-align: center; }
+  .toggle-click { background-color: #000; border-color: #000; color: #fff; }
+  .toggle-click:hover { background-color: $accent; border-color: $accent-sub; }
+}
+.admin-theme {
+  html, body { overflow-x: auto; }
+  main { min-width: 1280px;}
+  .header__welcome {display: none;}
+  .header__nav li:hover{color: $accent-sub; border-color: $accent-sub;}
+  .toggle-click {background-color: #fff; border-color: #fff; color: #000;}
+  .toggle-click:hover { background-color: $accent-sub; border-color: $accent-sub; }
 }
 
 // header
@@ -48,13 +54,15 @@
   }
 
   &__nav {
-    display: flex; gap: 30px;
-    ul {display: flex; justify-content: right; gap: 30px;}
+    display: flex; gap: 20px; align-items: center;
+    ul {
+      display: flex; justify-content: right; gap: 30px;
+    }
     li:hover {color: $accent; border-bottom: 1px solid $accent;}
     button {
-      background: none;
-      border: none;
-      padding: 0;
+      background: #fff;
+      border: 1px solid $gray; border-radius: 50px;
+      padding: 3px 12px;
       font: inherit;
       color: inherit;
       cursor: pointer;
@@ -102,7 +110,7 @@
 
   &__wrap {
     > h3{
-      color: $accent;
+      color: $accent-sub;
       margin-top: 30px;
     }
     ul{

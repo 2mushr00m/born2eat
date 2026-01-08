@@ -1,22 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiImageUrl } from '../../api/upload';
-import {
-  AdminRestDetailApi,
-  AdminRestUpdateApi,
-  AdminRestCreatePhotosApi,
-  // AdminRestDeletePhotoApi,
-} from '../../api/admin';
+import { getRest, patchRestBase, postRestPhotos, deleteRestPhotos } from '../../api/admin';
+import { X } from 'lucide-react';
 
-const FD_KEYS = {
-  files: 'photos',
-  photoType: 'photoType',
-  caption: 'caption',
-};
 const PHOTO_TYPE_LABEL = {
   MAIN: '대표사진',
   MENU_BOARD: '메뉴판',
   ETC: '기타',
+};
+const SOURCE_TYPE_LABEL = {
+  USER: '회원 제보',
+  ADMIN: '관리자',
+  CRAWLER: '수집/크롤링',
 };
 
 export default function AdRestDetail() {
@@ -29,9 +25,11 @@ export default function AdRestDetail() {
   const [form, setForm] = useState(toBaseForm(null));
 
   // 사진 업로드 폼
-  const [uploadType, setUploadType] = useState('MAIN');
-  const [uploadCaption, setUploadCaption] = useState('');
-  const [uploadFiles, setUploadFiles] = useState(null);
+  const [upload, setUpload] = useState({
+    sourceType: 'ADMIN',
+    sourceUserId: '',
+    items: [], // { file, previewUrl, photoType, caption, sortOrder }
+  });
 
   // 공통 상태
   const [loading, setLoading] = useState(false);
@@ -46,7 +44,7 @@ export default function AdRestDetail() {
       setErrMsg('');
       try {
         const id = Number(restaurantId);
-        const { data } = await AdminRestDetailApi(id);
+        const { data } = await getRest(id);
         if (!alive) return;
 
         const result = data?.result ?? null;
@@ -81,19 +79,19 @@ export default function AdRestDetail() {
 
   async function reload() {
     const id = Number(restaurantId);
-    const { data } = await AdminRestDetailApi(id);
+    const { data } = await getRest(id);
     const result = data?.result ?? null;
     setItem(result);
     setForm(toBaseForm(result));
   }
 
+  // 기본정보 수정
   async function onSaveBase() {
     const id = Number(restaurantId);
-    const payload = buildUpdatePayload(form); // 검증/정리는 백엔드에서
     setLoading(true);
     setErrMsg('');
     try {
-      await AdminRestUpdateApi(id, payload);
+      await patchRestBase(id, form);
       await reload();
       setIsEditingBase(false);
     } catch (e) {
@@ -102,32 +100,122 @@ export default function AdRestDetail() {
       setLoading(false);
     }
   }
-  async function onUploadPhotos() {
-    const id = Number(restaurantId);
 
-    if (!uploadFiles || uploadFiles.length === 0) {
+  // 사진 수정
+  function onPickUploadFiles(e) {
+    const files = Array.from(e?.target?.files || []);
+    if (!files.length) return;
+
+    setUpload((s) => {
+      const nextItems = files.map((f) => ({
+        file: f,
+        previewUrl: URL.createObjectURL(f),
+        photoType: 'ETC',
+        caption: '',
+        sortOrder: '',
+      }));
+      return { ...s, items: [...s.items, ...nextItems] };
+    });
+
+    // 같은 파일 재선택 가능하게
+    e.target.value = '';
+  }
+  function onRemoveUploadItem(idx) {
+    setUpload((s) => {
+      const it = s.items[idx];
+      if (it?.previewUrl) {
+        try {
+          URL.revokeObjectURL(it.previewUrl);
+        } catch {}
+      }
+      const next = s.items.filter((_, i) => i !== idx);
+      return { ...s, items: next };
+    });
+  }
+  function onChangeUploadItem(idx, patch) {
+    setUpload((s) => {
+      const next = s.items.map((it, i) => (i === idx ? { ...it, ...patch } : it));
+      return { ...s, items: next };
+    });
+  }
+  function clearUploadAll() {
+    setUpload((s) => {
+      for (const it of s.items) {
+        if (it?.previewUrl) {
+          try {
+            URL.revokeObjectURL(it.previewUrl);
+          } catch {}
+        }
+      }
+      return { ...s, items: [] };
+    });
+  }
+  async function onUploadPhotos() {
+    const items = upload.items || [];
+    if (!items.length) {
       alert('업로드할 파일을 선택해주세요.');
       return;
     }
 
     const fd = new FormData();
-    fd.append(FD_KEYS.photoType, uploadType);
-    if (String(uploadCaption || '').trim()) fd.append(FD_KEYS.caption, String(uploadCaption).trim());
 
-    for (const f of uploadFiles) fd.append(FD_KEYS.files, f);
+    // 1) files
+    for (const it of items) {
+      if (it?.file) fd.append('photos', it.file);
+    }
+
+    // 2) meta(JSON) — 파일 순서와 동일하게 구성
+    const meta = items.map((it) => {
+      const captionRaw = String(it?.caption || '').trim();
+      const caption = captionRaw ? captionRaw : null;
+
+      const soRaw = String(it?.sortOrder ?? '').trim();
+      let sortOrder = null;
+      if (soRaw !== '') {
+        const n = Number(soRaw);
+        sortOrder = Number.isFinite(n) ? n : null;
+      }
+
+      const photoType = it?.photoType || 'ETC';
+
+      return { photoType, caption, sortOrder };
+    });
+    fd.append('meta', JSON.stringify(meta));
+
+    // 3) source (묶음 단위)
+    if (upload.sourceType) fd.append('sourceType', String(upload.sourceType));
+    if (String(upload.sourceUserId || '').trim()) fd.append('sourceUserId', String(upload.sourceUserId).trim());
 
     setLoading(true);
     setErrMsg('');
     try {
-      await AdminRestCreatePhotosApi(id, fd);
+      await postRestPhotos(restaurantId, fd);
       await reload();
 
-      setUploadCaption('');
-      setUploadFiles(null);
-      const input = document.getElementById('rest-photo-file-input');
-      if (input) input.value = '';
+      // 업로드 폼 초기화
+      clearUploadAll();
+      setUpload((s) => ({ ...s, sourceType: 'ADMIN', sourceUserId: '' }));
     } catch (e) {
       setErrMsg('사진 업로드에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function onDeletePhoto(photoId) {
+    const rid = Number(restaurantId);
+    const pid = Number(photoId);
+    if (!rid || !pid) return;
+
+    const ok = window.confirm('이 사진을 삭제할까요?');
+    if (!ok) return;
+
+    setLoading(true);
+    setErrMsg('');
+    try {
+      await deleteRestPhotos(rid, pid);
+      await reload();
+    } catch (e) {
+      setErrMsg('사진 삭제에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -152,12 +240,14 @@ export default function AdRestDetail() {
               {renderBaseSection({ item, form, setForm, isEditingBase, setIsEditingBase, onSaveBase })}
               {renderPhotoSection({
                 photos,
-                uploadType,
-                setUploadType,
-                uploadCaption,
-                setUploadCaption,
-                setUploadFiles,
+                upload,
+                setUpload,
+                onPickUploadFiles,
+                onChangeUploadItem,
+                onRemoveUploadItem,
+                clearUploadAll,
                 onUploadPhotos,
+                onDeletePhoto,
               })}
               {renderTagSection()}
               {renderBroadcastSection()}
@@ -172,9 +262,20 @@ export default function AdRestDetail() {
 /* ===========================
  * 섹션 렌더 함수들
  * =========================== */
-
 function renderBaseSection({ item, form, setForm, isEditingBase, setIsEditingBase, onSaveBase }) {
   const regionText = (item?.region?.depth1 || '') + (item?.region?.depth2 ? ` ${item.region.depth2}` : '') || '-';
+
+  const tdLabelStyle = { width: 120 };
+  const inputStyle = { width: '90%' };
+
+  function startEdit() {
+    setForm(toBaseForm(item));
+    setIsEditingBase(true);
+  }
+  function cancelEdit() {
+    setForm(toBaseForm(item));
+    setIsEditingBase(false);
+  }
 
   return (
     <div style={{ marginTop: 12 }}>
@@ -182,12 +283,12 @@ function renderBaseSection({ item, form, setForm, isEditingBase, setIsEditingBas
         <h2 style={{ margin: 0 }}>■ 기본 정보</h2>
 
         {!isEditingBase ? (
-          <button type="button" onClick={() => setIsEditingBase(true)}>
+          <button type="button" onClick={startEdit}>
             기본 정보 수정
           </button>
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" onClick={() => setIsEditingBase(false)}>
+            <button type="button" onClick={cancelEdit}>
               취소
             </button>
             <button type="button" onClick={onSaveBase}>
@@ -197,245 +298,318 @@ function renderBaseSection({ item, form, setForm, isEditingBase, setIsEditingBas
         )}
       </div>
 
-      {/* 기본정보 표 */}
       <div style={{ marginTop: 8 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <tbody>
             <tr>
-              <td>ID</td>
+              <td style={tdLabelStyle}>ID</td>
               <td>{item.restaurantId}</td>
-              <td>공개</td>
-              <td>{item.isPublished ? 'Y' : 'N'}</td>
-            </tr>
-            <tr>
-              <td>가게명</td>
-              <td>{item.name || '-'}</td>
-              <td>상태</td>
-              <td>{item.dataStatus || '-'}</td>
-            </tr>
-            <tr>
-              <td>분류</td>
-              <td>{item.foodCategory || '-'}</td>
-              <td>대표메뉴</td>
-              <td>{item.mainFood || '-'}</td>
-            </tr>
-            <tr>
-              <td>전화</td>
-              <td>{item.phone || '-'}</td>
-              <td>카카오 placeId</td>
-              <td>{item.kakaoPlaceId || '-'}</td>
-            </tr>
-            <tr>
-              <td>주소</td>
-              <td colSpan={3}>{item.address || '-'}</td>
-            </tr>
-            <tr>
-              <td>지역</td>
-              <td>{regionText}</td>
-              <td>regionCode</td>
-              <td>{item?.region?.code || '-'}</td>
-            </tr>
-            <tr>
-              <td>좌표</td>
-              <td colSpan={3}>
-                {item.latitude != null && item.longitude != null ? `${item.latitude}, ${item.longitude}` : '-'}
+
+              <td style={tdLabelStyle}>공개</td>
+              <td>
+                {!isEditingBase ? (
+                  item.isPublished ? (
+                    'Y'
+                  ) : (
+                    'N'
+                  )
+                ) : (
+                  <select
+                    value={form.isPublished}
+                    onChange={(e) => setForm((s) => ({ ...s, isPublished: e.target.value }))}
+                    style={inputStyle}>
+                    <option value="">미변경</option>
+                    <option value="true">공개</option>
+                    <option value="false">비공개</option>
+                  </select>
+                )}
               </td>
             </tr>
+
             <tr>
-              <td>설명</td>
-              <td colSpan={3}>{item.description || '-'}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {/* 기본정보 수정 폼 (토글) */}
-      {isEditingBase && (
-        <div style={{ marginTop: 12 }}>
-          <h3 style={{ margin: '0 0 8px 0' }}>■ 기본 정보 수정</h3>
-
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <tbody>
-              <tr>
-                <td>가게명</td>
-                <td colSpan={3}>
+              <td style={tdLabelStyle}>가게명</td>
+              <td>
+                {!isEditingBase ? (
+                  item.name || '-'
+                ) : (
                   <input
                     value={form.name}
                     onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
                     placeholder="가게명"
-                    style={{ width: '100%' }}
+                    style={inputStyle}
                   />
-                </td>
-              </tr>
+                )}
+              </td>
 
-              <tr>
-                <td>설명</td>
-                <td colSpan={3}>
-                  <textarea
-                    value={form.description}
-                    onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))}
-                    placeholder="description"
-                    style={{ width: '100%', minHeight: 90, resize: 'vertical' }}
-                  />
-                </td>
-              </tr>
-
-              <tr>
-                <td>카카오 placeId</td>
-                <td>
-                  <input
-                    value={form.kakaoPlaceId}
-                    onChange={(e) => setForm((s) => ({ ...s, kakaoPlaceId: e.target.value }))}
-                    placeholder="kakaoPlaceId"
-                    style={{ width: '100%' }}
-                  />
-                </td>
-                <td>regionCode</td>
-                <td>
-                  <input
-                    value={form.regionCode}
-                    onChange={(e) => setForm((s) => ({ ...s, regionCode: e.target.value }))}
-                    placeholder="regionCode"
-                    style={{ width: '100%' }}
-                  />
-                </td>
-              </tr>
-
-              <tr>
-                <td>대표메뉴</td>
-                <td>
-                  <input
-                    value={form.mainFood}
-                    onChange={(e) => setForm((s) => ({ ...s, mainFood: e.target.value }))}
-                    placeholder="mainFood"
-                    style={{ width: '100%' }}
-                  />
-                </td>
-                <td>전화</td>
-                <td>
-                  <input
-                    value={form.phone}
-                    onChange={(e) => setForm((s) => ({ ...s, phone: e.target.value }))}
-                    placeholder="phone"
-                    style={{ width: '100%' }}
-                  />
-                </td>
-              </tr>
-
-              <tr>
-                <td>주소</td>
-                <td colSpan={3}>
-                  <input
-                    value={form.address}
-                    onChange={(e) => setForm((s) => ({ ...s, address: e.target.value }))}
-                    placeholder="address"
-                    style={{ width: '100%' }}
-                  />
-                </td>
-              </tr>
-
-              <tr>
-                <td>위도</td>
-                <td>
-                  <input
-                    value={form.latitude}
-                    onChange={(e) => setForm((s) => ({ ...s, latitude: e.target.value }))}
-                    placeholder="latitude"
-                    style={{ width: '100%' }}
-                  />
-                </td>
-                <td>경도</td>
-                <td>
-                  <input
-                    value={form.longitude}
-                    onChange={(e) => setForm((s) => ({ ...s, longitude: e.target.value }))}
-                    placeholder="longitude"
-                    style={{ width: '100%' }}
-                  />
-                </td>
-              </tr>
-
-              <tr>
-                <td>공개</td>
-                <td>
-                  <select
-                    value={form.isPublished}
-                    onChange={(e) => setForm((s) => ({ ...s, isPublished: e.target.value }))}
-                    style={{ width: '100%' }}>
-                    <option value="">(서버 처리)</option>
-                    <option value="true">공개</option>
-                    <option value="false">비공개</option>
-                  </select>
-                </td>
-                <td>상태</td>
-                <td>
+              <td style={tdLabelStyle}>상태</td>
+              <td>
+                {!isEditingBase ? (
+                  item.dataStatus || '-'
+                ) : (
                   <select
                     value={form.dataStatus}
                     onChange={(e) => setForm((s) => ({ ...s, dataStatus: e.target.value }))}
-                    style={{ width: '100%' }}>
-                    <option value="">(서버 처리)</option>
+                    style={inputStyle}>
+                    <option value="">미변경</option>
                     <option value="RAW">RAW</option>
                     <option value="BASIC">BASIC</option>
                     <option value="VERIFIED">VERIFIED</option>
                   </select>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
+                )}
+              </td>
+            </tr>
+
+            <tr>
+              <td style={tdLabelStyle}>분류</td>
+              <td>{item.foodCategory || '-'}</td>
+
+              <td style={tdLabelStyle}>대표메뉴</td>
+              <td>
+                {!isEditingBase ? (
+                  item.mainFood || '-'
+                ) : (
+                  <input
+                    value={form.mainFood}
+                    onChange={(e) => setForm((s) => ({ ...s, mainFood: e.target.value }))}
+                    placeholder="대표 음식"
+                    style={inputStyle}
+                  />
+                )}
+              </td>
+            </tr>
+
+            <tr>
+              <td style={tdLabelStyle}>전화</td>
+              <td>
+                {!isEditingBase ? (
+                  item.phone || '-'
+                ) : (
+                  <input
+                    value={form.phone}
+                    onChange={(e) => setForm((s) => ({ ...s, phone: e.target.value }))}
+                    placeholder="전화번호"
+                    style={inputStyle}
+                  />
+                )}
+              </td>
+
+              <td style={tdLabelStyle}>카카오맵 Id</td>
+              <td>
+                {!isEditingBase ? (
+                  item.kakaoPlaceId || '-'
+                ) : (
+                  <input
+                    value={form.kakaoPlaceId}
+                    onChange={(e) => setForm((s) => ({ ...s, kakaoPlaceId: e.target.value }))}
+                    placeholder="kakaoPlaceId"
+                    style={inputStyle}
+                  />
+                )}
+              </td>
+            </tr>
+
+            <tr>
+              <td style={tdLabelStyle}>주소</td>
+              <td colSpan={3}>
+                {!isEditingBase ? (
+                  item.address || '-'
+                ) : (
+                  <input
+                    value={form.address}
+                    onChange={(e) => setForm((s) => ({ ...s, address: e.target.value }))}
+                    placeholder="주소"
+                    style={inputStyle}
+                  />
+                )}
+              </td>
+            </tr>
+
+            <tr>
+              <td style={tdLabelStyle}>지역</td>
+              <td>{regionText}</td>
+
+              <td style={tdLabelStyle}>법정동코드</td>
+              <td>
+                {!isEditingBase ? (
+                  item?.region?.code || '-'
+                ) : (
+                  <input
+                    value={form.regionCode}
+                    onChange={(e) => setForm((s) => ({ ...s, regionCode: e.target.value }))}
+                    placeholder="regionCode"
+                    style={inputStyle}
+                  />
+                )}
+              </td>
+            </tr>
+
+            {/* ✅ 위도/경도 분리 표기 */}
+            <tr>
+              <td style={tdLabelStyle}>위도 (latitude)</td>
+              <td>
+                {!isEditingBase ? (
+                  item.latitude != null ? (
+                    String(item.latitude)
+                  ) : (
+                    '-'
+                  )
+                ) : (
+                  <input
+                    value={form.latitude}
+                    onChange={(e) => setForm((s) => ({ ...s, latitude: e.target.value }))}
+                    placeholder="예: 37.5665"
+                    style={inputStyle}
+                  />
+                )}
+              </td>
+
+              <td style={tdLabelStyle}>경도 (longitude)</td>
+              <td>
+                {!isEditingBase ? (
+                  item.longitude != null ? (
+                    String(item.longitude)
+                  ) : (
+                    '-'
+                  )
+                ) : (
+                  <input
+                    value={form.longitude}
+                    onChange={(e) => setForm((s) => ({ ...s, longitude: e.target.value }))}
+                    placeholder="예: 126.9780"
+                    style={inputStyle}
+                  />
+                )}
+              </td>
+            </tr>
+
+            <tr>
+              <td style={tdLabelStyle}>설명</td>
+              <td colSpan={3}>
+                {!isEditingBase ? (
+                  item.description || '-'
+                ) : (
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))}
+                    placeholder="설명"
+                    style={{ width: '100%', minHeight: 90, resize: 'vertical' }}
+                  />
+                )}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
-
 function renderPhotoSection({
   photos,
-  uploadType,
-  setUploadType,
-  uploadCaption,
-  setUploadCaption,
-  setUploadFiles,
+  upload,
+  setUpload,
+  onPickUploadFiles,
+  onChangeUploadItem,
+  onRemoveUploadItem,
+  clearUploadAll,
   onUploadPhotos,
+  onDeletePhoto,
 }) {
+  const items = upload?.items || [];
+
   return (
     <div style={{ marginTop: 22 }}>
       <h2 style={{ margin: '0 0 8px 0' }}>■ 사진</h2>
 
       {/* 업로드 영역 */}
       <div style={{ border: '1px solid #ddd', padding: 12 }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span>유형</span>
-          <select value={uploadType} onChange={(e) => setUploadType(e.target.value)}>
-            <option value="MAIN">{PHOTO_TYPE_LABEL.MAIN}</option>
-            <option value="MENU_BOARD">{PHOTO_TYPE_LABEL.MENU_BOARD}</option>
-            <option value="ETC">{PHOTO_TYPE_LABEL.ETC}</option>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span>출처</span>
+          <select value={upload.sourceType} onChange={(e) => setUpload((s) => ({ ...s, sourceType: e.target.value }))}>
+            <option value="ADMIN">{SOURCE_TYPE_LABEL.ADMIN}</option>
+            <option value="USER">{SOURCE_TYPE_LABEL.USER}</option>
           </select>
 
-          <input
-            value={uploadCaption}
-            onChange={(e) => setUploadCaption(e.target.value)}
-            placeholder="caption (선택)"
-            style={{ minWidth: 240 }}
-          />
-
-          <input id="rest-photo-file-input" type="file" multiple onChange={(e) => setUploadFiles(e.target.files)} />
-
-          <button type="button" onClick={onUploadPhotos}>
+          {upload.sourceType === 'USER' && (
+            <input
+              value={upload.sourceUserId}
+              onChange={(e) => setUpload((s) => ({ ...s, sourceUserId: e.target.value }))}
+              placeholder="제보자 ID (선택)"
+              style={{ width: 180 }}
+            />
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 10, margin: 12 }}>
+          <input type="file" multiple accept="image/*" onChange={onPickUploadFiles} />
+          <button type="button" onClick={onUploadPhotos} disabled={!items.length}>
             업로드
           </button>
+
+          <button type="button" onClick={clearUploadAll} disabled={!items.length}>
+            선택 초기화
+          </button>
         </div>
+
+        {/* 미리보기 + 파일별 메타 */}
+        {items.length > 0 && (
+          <div style={{ marginTop: 12, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            {items.map((it, idx) => {
+              const name = it?.file?.name || `file-${idx + 1}`;
+              const url = it?.previewUrl || '';
+              return (
+                <div key={`${name}-${idx}`} style={{ width: 200, border: '1px solid #eee', padding: 10 }}>
+                  <div style={{ border: '1px solid #333', padding: 6, textAlign: 'center' }}>
+                    {url ? (
+                      <img src={url} alt={name} style={{ width: '100%', height: 120, objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        (no preview)
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ marginTop: 8, fontSize: 12, wordBreak: 'break-all' }}>{name}</div>
+
+                  <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
+                    <select
+                      value={it.photoType}
+                      onChange={(e) => onChangeUploadItem(idx, { photoType: e.target.value })}>
+                      <option value="MAIN">{PHOTO_TYPE_LABEL.MAIN}</option>
+                      <option value="MENU_BOARD">{PHOTO_TYPE_LABEL.MENU_BOARD}</option>
+                      <option value="ETC">{PHOTO_TYPE_LABEL.ETC}</option>
+                    </select>
+
+                    <input
+                      value={it.caption}
+                      onChange={(e) => onChangeUploadItem(idx, { caption: e.target.value })}
+                      placeholder="캡션 (선택)"
+                    />
+
+                    <input
+                      value={it.sortOrder}
+                      onChange={(e) => onChangeUploadItem(idx, { sortOrder: e.target.value })}
+                      placeholder="노출 순서 (선택)"
+                    />
+
+                    <button type="button" onClick={() => onRemoveUploadItem(idx)}>
+                      제거
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* 현재 사진 목록 */}
       <div style={{ marginTop: 12 }}>
-        <PhotoGroup title="대표사진" items={photos.main} />
-        <PhotoGroup title="메뉴판" items={photos.menuBoard} />
-        <PhotoGroup title="기타" items={photos.etc} />
+        <PhotoGroup title="대표사진" items={photos.main} onDelete={onDeletePhoto} />
+        <PhotoGroup title="메뉴판" items={photos.menuBoard} onDelete={onDeletePhoto} />
+        <PhotoGroup title="기타" items={photos.etc} onDelete={onDeletePhoto} />
       </div>
     </div>
   );
 }
-
 function renderTagSection() {
   return (
     <div style={{ marginTop: 22 }}>
@@ -447,7 +621,6 @@ function renderTagSection() {
     </div>
   );
 }
-
 function renderBroadcastSection() {
   return (
     <div style={{ marginTop: 22 }}>
@@ -480,30 +653,12 @@ function toBaseForm(it) {
     dataStatus: '', // 서버에서 처리할 수 있게 기본은 빈 값
   };
 }
-
-/** 검증/정리는 백엔드에서 하는 전제: "들어가는 모양"만 맞춰 payload 생성 */
-function buildUpdatePayload(form) {
-  return {
-    name: form.name,
-    description: form.description,
-    kakaoPlaceId: form.kakaoPlaceId,
-    regionCode: form.regionCode,
-    mainFood: form.mainFood,
-    phone: form.phone,
-    address: form.address,
-    longitude: form.longitude,
-    latitude: form.latitude,
-    isPublished: form.isPublished, // 'true' | 'false' | ''
-    dataStatus: form.dataStatus, // 'RAW' | 'BASIC' | 'VERIFIED' | ''
-  };
-}
-
-function PhotoGroup({ title, items }) {
+function PhotoGroup({ title, items, onDelete }) {
   const list = Array.isArray(items) ? items : [];
 
   return (
     <div style={{ marginTop: 14 }}>
-      <h3 style={{ margin: '0 0 8px 0' }}>
+      <h3>
         {title} ({list.length})
       </h3>
 
@@ -517,13 +672,35 @@ function PhotoGroup({ title, items }) {
               String(p.filePath || '')
                 .split('/')
                 .pop() || `photo-${idx + 1}`;
+
             return (
-              <div key={`${p.filePath}-${idx}`} style={{ width: 180 }}>
-                <div style={{ border: '1px solid #333', padding: 8, textAlign: 'center' }}>
+              <div key={`${p.photoId ?? p.filePath}-${idx}`} style={{ width: 180 }}>
+                <div style={{ padding: 8, textAlign: 'center', position: 'relative' }}>
+                  <X
+                    size={18}
+                    onClick={() => onDelete?.(p.photoId)}
+                    style={{
+                      position: 'absolute',
+                      right: 8,
+                      top: 8,
+                      cursor: 'pointer',
+                      opacity: 0.7,
+                      transition: 'opacity 120ms ease, transform 120ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.opacity = '1';
+                      e.currentTarget.style.transform = 'scale(1.08)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.opacity = '0.7';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                  />
+
                   <img src={url} alt={fileName} style={{ width: '100%', height: 120, objectFit: 'cover' }} />
-                  <div style={{ marginTop: 6, fontSize: 12 }}>{p.caption || '-'}</div>
+                  <div style={{ fontSize: 12 }}>{p.caption || '-'}</div>
                 </div>
-                <div style={{ fontSize: 12, marginTop: 6, wordBreak: 'break-all' }}>{fileName}</div>
+                <div style={{ fontSize: 12, wordBreak: 'break-all' }}>{fileName}</div>
               </div>
             );
           })}

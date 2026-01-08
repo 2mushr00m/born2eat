@@ -1,6 +1,13 @@
 // controllers/requests/restaurantRequest.js
-import { requireString, parseNumber, parseBoolean } from '../../common/check.js';
-import { RESTAURANT_DATA_STATUS, RESTAURANT_SORT } from '../../common/constants.js';
+import { requireString, parseNumber, parseBoolean, parseId } from '../../common/check.js';
+import {
+  RESTAURANT_DATA_STATUS,
+  RESTAURANT_SORT,
+  RESTAURANT_PHOTO_SOURCE,
+  RESTAURANT_PHOTO_TYPE,
+} from '../../common/constants.js';
+import { AppError, ERR } from '../../common/error.js';
+import { toFilePath } from '../../middleware/upload.js';
 
 /** @typedef {import('express').Request} Request */
 
@@ -200,5 +207,110 @@ export function buildUpdatePayload(req) {
   return payload;
 }
 
-/** 사진 생성 payload */
-export function buildCreatePhotosPayload(req) {}
+/** 사진 생성 payload
+ * @param {Request} req
+ * @returns {restaurant.CreatePhotosPayload} */
+export function buildCreatePhotosPayload(req) {
+  const body = req?.body ?? {};
+  const files = Array.isArray(req.files) ? req.files : [];
+
+  // 0) 파일 필수
+  if (files.length === 0) {
+    throw new AppError(ERR.VALIDATION, {
+      message: '업로드할 사진이 없습니다.',
+      data: { keys: ['photos'] },
+    });
+  }
+
+  // 1) meta JSON 파싱 (필수)
+  const metaRaw = body.meta == null ? '' : String(body.meta).trim();
+  if (!metaRaw) {
+    throw new AppError(ERR.VALIDATION, {
+      message: 'meta가 필요합니다.',
+      data: { keys: ['meta'] },
+    });
+  }
+
+  let metaArr = null;
+  try {
+    metaArr = JSON.parse(metaRaw);
+  } catch (e) {
+    throw new AppError(ERR.VALIDATION, {
+      message: 'meta(JSON) 파싱에 실패했습니다.',
+      data: { keys: ['meta'] },
+    });
+  }
+
+  if (!Array.isArray(metaArr)) {
+    throw new AppError(ERR.VALIDATION, {
+      message: 'meta는 JSON 배열 문자열이어야 합니다.',
+      data: { keys: ['meta'] },
+    });
+  }
+
+  // 2) 인덱스 매칭 검증
+  if (metaArr.length !== files.length) {
+    throw new AppError(ERR.VALIDATION, {
+      message: 'meta 길이와 photos 파일 개수가 일치해야 합니다.',
+      data: { keys: ['meta', 'photos'], extra: { metaLen: metaArr.length, filesLen: files.length } },
+    });
+  }
+
+  // 3) 공통 sourceType/sourceUserId (요청값 기반: 이전 합의 유지)
+  const rawSourceType = body.sourceType == null ? '' : String(body.sourceType).trim();
+  const sourceType = Object.values(RESTAURANT_PHOTO_SOURCE).includes(rawSourceType)
+    ? rawSourceType
+    : RESTAURANT_PHOTO_SOURCE.USER;
+
+  const sourceUserId = parseNumber(body.sourceUserId, 'sourceUserId', {
+    integer: true,
+    nullable: true,
+    autoFix: true,
+    min: 1,
+  });
+
+  // 4) files + meta → photos
+  const photos = [];
+
+  for (let i = 0; i < files.length; i += 1) {
+    const f = files[i];
+    const m = metaArr[i] ?? {};
+
+    const filePath = toFilePath(f);
+    if (!filePath) {
+      throw new AppError(ERR.VALIDATION, {
+        message: '업로드 파일 처리에 실패했습니다.',
+        data: { keys: ['photos'], extra: { index: i } },
+      });
+    }
+
+    const rawPhotoType = m?.photoType == null ? '' : String(m.photoType).trim();
+    const photoType = Object.values(RESTAURANT_PHOTO_TYPE).includes(rawPhotoType)
+      ? rawPhotoType
+      : RESTAURANT_PHOTO_TYPE.ETC;
+
+    const sortOrder = parseNumber(m.sortOrder, 'sortOrder', {
+      integer: true,
+      nullable: true,
+      autoFix: true,
+      min: 0,
+      max: 127,
+    });
+
+    const captionRaw = m?.caption == null ? '' : String(m.caption).trim();
+    const caption = captionRaw ? captionRaw : null;
+
+    photos.push({
+      photoType,
+      sortOrder,
+      filePath,
+      caption,
+    });
+  }
+
+  return {
+    sourceType,
+    sourceUserId: sourceType === RESTAURANT_PHOTO_SOURCE.USER ? sourceUserId : (sourceUserId ?? null),
+    photos,
+  };
+}

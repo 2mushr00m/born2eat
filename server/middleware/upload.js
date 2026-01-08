@@ -109,7 +109,7 @@ export const uploaders = {
       const field = String(file?.fieldname ?? 'photo');
       return `${restaurantId}-${field}-${Date.now()}-${rand8()}${ext}`;
     },
-  }).fields([{ name: 'main' }, { name: 'menu_board' }, { name: 'etc' }]),
+  }).array('photos'),
 };
 
 /** file → file_path */

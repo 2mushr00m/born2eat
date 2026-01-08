@@ -1117,14 +1117,165 @@ export async function unlikeRestaurant(restaurantId, userId) {
 
 /** 음식점 사진 추가
  * @param {number} restaurantId
- * @param {restaurant.} payload
+ * @param {restaurant.CreatePhotosPayload} payload
  * @returns {Promise<restaurant.CreatedPhotos>}
  */
-export async function createRestaurantPhotos(restaurantId, payload) {}
+export async function createRestaurantPhotos(restaurantId, payload) {
+  const { sourceType, sourceUserId, photos } = payload ?? {};
+
+  if (!Array.isArray(photos) || photos.length === 0) {
+    throw new AppError(ERR.VALIDATION, {
+      message: '업로드할 사진이 없습니다.',
+      data: { keys: ['photos'], targetId: restaurantId },
+    });
+  }
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1) 음식점 존재 확인
+    const [rRows] = await conn.execute(
+      `
+      SELECT restaurant_id AS restaurantId
+      FROM restaurant
+      WHERE restaurant_id = :restaurantId
+      LIMIT 1
+      `,
+      { restaurantId },
+    );
+
+    if (!rRows?.[0])
+      throw new AppError(ERR.NOT_FOUND, {
+        message: '해당 음식점이 존재하지 않습니다.',
+        data: { targetId: restaurantId },
+      });
+
+    // 2) insert (insertId 수집을 위해 개별 insert)
+    const inserted = [];
+    for (const p of photos) {
+      const photoType = p?.photoType ?? RESTAURANT_PHOTO_TYPE.ETC;
+      const sortOrder = p?.sortOrder ?? null;
+      const filePath = p?.filePath;
+      const caption = p?.caption ?? null;
+
+      if (!filePath) {
+        throw new AppError(ERR.VALIDATION, {
+          message: '사진 경로(filePath)가 비어있습니다.',
+          data: { keys: ['filePath'], targetId: restaurantId },
+        });
+      }
+
+      const [res] = await conn.execute(
+        `
+        INSERT INTO restaurant_photo (
+          restaurant_id,
+          photo_type,
+          sort_order,
+          file_path,
+          caption,
+          source_type,
+          source_user_id
+        ) VALUES (
+          :restaurantId,
+          :photoType,
+          :sortOrder,
+          :filePath,
+          :caption,
+          :sourceType,
+          :sourceUserId
+        )
+        `,
+        {
+          restaurantId,
+          photoType,
+          sortOrder,
+          filePath,
+          caption,
+          sourceType: sourceType ?? RESTAURANT_PHOTO_SOURCE.USER,
+          sourceUserId: sourceUserId ?? null,
+        },
+      );
+
+      if (res?.insertId != null) inserted.push(Number(res.insertId));
+    }
+
+    await conn.commit();
+
+    // 프론트는 성공 후 reload()를 호출하므로, 응답은 최소 구성
+    return { createdCount: inserted.length };
+  } catch (err) {
+    try {
+      await conn.rollback();
+    } catch {}
+    if (err instanceof AppError) throw err;
+
+    throw new AppError(ERR.DB, {
+      message: '음식점 사진 업로드 처리 중 오류가 발생했습니다.',
+      data: { keys: ['restaurantId'], targetId: restaurantId, dbCode: err?.code },
+      cause: err,
+    });
+  } finally {
+    conn.release();
+  }
+}
 
 /** 음식점 사진 삭제
  * @param {number} restaurantId
  * @param {number} photoId
  * @returns {Promise<void>}
  */
-export async function deleteRestaurantPhoto(restaurantId, photoId) {}
+export async function deleteRestaurantPhoto(restaurantId, photoId) {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1) 존재 확인 (+ 락)
+    const [rows] = await conn.execute(
+      `
+      SELECT
+        rp.photo_id     AS photoId,
+        rp.restaurant_id AS restaurantId
+      FROM restaurant_photo rp
+      WHERE rp.photo_id = :photoId
+        AND rp.restaurant_id = :restaurantId
+      LIMIT 1
+      FOR UPDATE
+      `,
+      { restaurantId, photoId },
+    );
+
+    if (!rows?.[0]) {
+      throw new AppError(ERR.NOT_FOUND, {
+        message: '해당 사진이 존재하지 않습니다.',
+        data: { targetId: photoId, extra: { restaurantId } },
+      });
+    }
+
+    // 2) 삭제
+    await conn.execute(
+      `
+      DELETE FROM restaurant_photo
+      WHERE photo_id = :photoId
+        AND restaurant_id = :restaurantId
+      LIMIT 1
+      `,
+      { restaurantId, photoId },
+    );
+
+    await conn.commit();
+  } catch (err) {
+    try {
+      await conn.rollback();
+    } catch {}
+    if (err instanceof AppError) throw err;
+
+    throw new AppError(ERR.DB, {
+      message: '음식점 사진 삭제 중 오류가 발생했습니다.',
+      data: { targetId: photoId, extra: { restaurantId }, dbCode: err?.code },
+      cause: err,
+    });
+  } finally {
+    conn.release();
+  }
+}

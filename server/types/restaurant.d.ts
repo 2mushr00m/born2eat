@@ -52,7 +52,16 @@ declare global {
       dataStatus?: RestaurantDataStatus;
     };
 
-    type CreatePhotosPayload = {};
+    type CreatePhotosPayload = {
+      sourceType: RestaurantPhotoSource;
+      sourceUserId: number | null;
+      photos: {
+        photoType: RestaurantPhotoType;
+        sortOrder?: number | null;
+        filePath: string;
+        caption?: string | null;
+      }[];
+    };
 
     // ========== Service → Controller =======
     type Photo = {

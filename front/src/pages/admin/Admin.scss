@@ -3,10 +3,12 @@
 .adMain{
   margin-left: calc(170px + 3%);
 
+  // 공통 래핑
   &__wrap{
   padding-top: 30px;
   }
 
+  // 공통 제목
   &__title{
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 25px;
@@ -16,16 +18,174 @@
       background-color: #fff;
       padding: 5px 15px;
       cursor: pointer;
-      &:hover{background-color: $accent; color: #fff;}
+      &:hover{background-color: $accent-sub;}
     }
   }
 
+  // 공통 내비
   &__nav{
+    > div {margin-bottom: 20px;}
     &__sort{
-      display: flex;
+      padding: 0 3px;
+      display: flex; gap: 30px; align-items: center; justify-content: space-between;
+      div{
+        display: flex; gap: 10px; align-items: center;
+      }
     }
     &__search{
-      display: flex; gap: 8px; align-items: center;
+      display: flex; gap: 30px; align-items: center; justify-content: center;
+      background-color: #555;
+      border-radius: 50px;
+      padding: 10px 0;
+      .filter-box-admin{
+        display: flex; gap: 20px; align-items: center;
+        > div {display: flex; gap: 10px; align-items: center;}
+      }
+      .search-box-admin{
+        input, button {
+          padding: 0;
+          margin: 0;
+          border: 1px solid #aaa;
+          font-size: 14px;
+          line-height: 1;
+          box-sizing: border-box;
+          height: 30px;
+        }
+        input{
+          width: 300px;
+          border-right: none;
+          padding-left: 10px;
+          &:focus{outline: none;}
+        }
+        button{
+          padding: 0;
+          background-color: #000;
+          color: inherit;
+          width: 50px;
+        }
+      }
     }
+  }
+
+  // 공통 표
+  &__table{
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      th, td {padding: 8px; border: 1px solid #111;}
+      thead{background-color: #000; color: inherit;}
+      tbody{background-color: #222;}
+      tbody tr:hover{background-color: #444;}
+    }
+  }
+
+  // 공통 페이지네이션
+  &__pagenation{
+    padding: 30px 0 60px;
+    display: flex; gap: 6px;
+    justify-content: center; align-items: center;
+    .pagenation-btn{
+      &__prev, &__next {
+        border: none;
+        border-radius: 20px;
+        width: 25px;
+        height: 25px;
+      }
+      &__prev{
+        margin-right: 10px;
+      }
+      &__next{
+        margin-left: 10px;
+      }
+      &__number{
+        margin: 0 1px;
+        border: none;
+        background-color: transparent;
+        color: inherit;
+        font-size: 16px;
+        &-active{
+          color: $accent-sub;
+          border-bottom: 1px solid $accent-sub;
+          font-weight: bold;
+        }
+      }
+    }
+  }
+
+  // 공통 칩
+  .chip{
+    padding: 2px 8px;
+    font-size: 14px;
+    border-radius: 20px;
+    width: 60px;
+    margin: 0 auto;
+  }
+}
+
+
+// Member.js
+.adMain__table__MemberList{
+  tbody{
+    tr td{text-align: center;}
+  }
+}
+
+
+// Restarants.js
+.adMain__table__RestList{
+  tbody{
+    tr td{text-align: center;}
+    tr td:nth-child(2){text-align: left; cursor: pointer;}
+    tr td:nth-child(3){text-align: left; cursor: pointer;}
+    tr td:nth-child(6){font-family: "Noto Sans KR";}
+    tr td:nth-child(7){font-family: "Noto Sans KR";}
+
+    tr td:nth-child(2):hover{color: $accent-sub;}
+    tr td:nth-child(3):hover{color: $accent-sub;}
+  }
+
+  .chip {
+    &-raw {background-color: #eee; color: #555;}
+    &-basic {background-color: #224499; color: #fff;}
+    &-verified {background-color: #207744; color: #fff;}
+  }
+}
+
+
+// Review.js
+.adMain__table__ReviewList{
+  tbody{
+    tr td{text-align: center;}
+    tr td:nth-child(2){cursor: pointer;}
+    tr td:nth-child(3){cursor: pointer;}
+    tr td:nth-child(4){text-align: left; cursor: pointer;}
+    tr td:nth-child(6){font-family: "Noto Sans KR";}
+    tr td:nth-child(7){text-align: left;}
+
+    tr td:nth-child(2):hover{color: $accent-sub;}
+    tr td:nth-child(3):hover{color: $accent-sub;}
+    tr td:nth-child(4):hover{color: $accent-sub;}
+  }
+}
+
+
+// Suggestion.js
+.adMain__table__SuggList{
+  tbody {
+    tr td { text-align: center; }
+    tr td:nth-child(2),
+    tr td:nth-child(4) { cursor: pointer; }
+
+    tr td:nth-child(2):hover,
+    tr td:nth-child(4):hover { color: $accent-sub; }
+
+    tr td.notMember { cursor: default; pointer-events: none; }
+    tr td.notMember span { color: #555; }
+    tr td.notMember:hover { color: inherit; }
+  }
+
+  .chip{
+    &-answered{background-color: #207744; color: #fff;}
+    &-pending{background-color: #555; color: #fff;}
   }
 }
