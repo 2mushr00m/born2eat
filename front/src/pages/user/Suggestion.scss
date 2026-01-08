@@ -1,0 +1,17 @@
+@use '../../styles/variables.scss' as *;
+
+.inquiry{
+  &__title{
+    margin-bottom: 30px;
+    h1{color: $brown;}
+    p{margin-top: 10px;}
+  }
+  
+  &__nav{margin-bottom: 30px;}
+
+  form{
+    display: flex; flex-direction: column; gap: 10px;
+    div:nth-child(1){display: flex; gap: 20px;}
+    div:nth-child(1){display: flex;}
+  }
+}

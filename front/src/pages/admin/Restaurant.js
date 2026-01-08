@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AdminRestListApi } from '../../api/admin';
 import AdPagination from './components/AdPagination';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function AdRest() {
   const navigate = useNavigate();
@@ -95,6 +96,7 @@ export default function AdRest() {
   return (
     <div className="adMain">
       <section className="adMain__wrap">
+
         {/* 타이틀/버튼 */}
         <article className="adMain__title">
           <h1><span>●</span> 식당 목록</h1>
@@ -103,18 +105,77 @@ export default function AdRest() {
           </Link>
         </article>
 
-        {/* 검색/로딩/필터/정렬 */}
+        {/* 필터/검색 + 로딩/정렬 */}
         <article className='adMain__nav'>
-          {/* 로딩/정렬 */}
+          <div className='adMain__nav__search'>
+            <div className='filter-box-admin'>
+              <div>
+                <p>공개여부</p>
+                <select
+                  value={isPublished}
+                  onChange={(e) => {
+                    setPage(1);
+                    setIsPublished(e.target.value);
+                  }}>
+                  <option value="">전체</option>
+                  <option value="true">공개</option>
+                  <option value="false">비공개</option>
+                </select>
+              </div>
+              
+              <div>
+                <p>데이터상태</p>
+                <select
+                  value={dataStatus}
+                  onChange={(e) => {
+                    setPage(1);
+                    setDataStatus(e.target.value);
+                  }}>
+                  <option value="">전체</option>
+                  <option value="RAW">RAW</option>
+                  <option value="BASIC">BASIC</option>
+                  <option value="VERIFIED">VERIFIED</option>
+                </select>
+              </div>
+              
+              <div>
+                <p>페이지당</p>
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setPage(1);
+                    setLimit(Number(e.target.value));
+                  }}>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            <div className='search-box-admin'>
+              <input
+                value={inputQ}
+                onChange={(e) => setInputQ(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder="검색어 (이름, 주소, 대표메뉴, 분류)"
+              />
+              <button type="button" onClick={onSearch}>
+                검색
+              </button>
+              <button type="button" onClick={onResetAll}>
+                초기화
+              </button>
+            </div>
+          </div>
           <div className='adMain__nav__sort'>
             <div>
               {loading && <p>Loading...</p>}
               {!loading && errMsg && <p>{errMsg}</p>}
-              {!loading && !errMsg && <p>총 {total}개</p>}
+              {!loading && !errMsg && <p>현재 등록 식당 수: 총 {total}개</p>}
             </div>
 
             <div>
-              <span>정렬</span>
               <select
                 value={sort}
                 onChange={(e) => {
@@ -127,68 +188,12 @@ export default function AdRest() {
               </select>
             </div>
           </div>
-          
-          {/* 검색 */}
-          <div className='adMain__nav__search'>
-            <input
-              value={inputQ}
-              onChange={(e) => setInputQ(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder="검색어 (이름, 주소, 대표메뉴, 분류)"
-            />
-            <button type="button" onClick={onSearch}>
-              검색
-            </button>
-            <button type="button" onClick={onResetAll}>
-              초기화
-            </button>
-          </div>
-
-          {/* 필터 */}
-          <div>
-            <span>공개여부</span>
-            <select
-              value={isPublished}
-              onChange={(e) => {
-                setPage(1);
-                setIsPublished(e.target.value);
-              }}>
-              <option value="">전체</option>
-              <option value="true">공개</option>
-              <option value="false">비공개</option>
-            </select>
-            
-            <span>데이터상태</span>
-            <select
-              value={dataStatus}
-              onChange={(e) => {
-                setPage(1);
-                setDataStatus(e.target.value);
-              }}>
-              <option value="">전체</option>
-              <option value="RAW">RAW</option>
-              <option value="BASIC">BASIC</option>
-              <option value="VERIFIED">VERIFIED</option>
-            </select>
-            
-            <span>페이지당</span>
-            <select
-              value={limit}
-              onChange={(e) => {
-                setPage(1);
-                setLimit(Number(e.target.value));
-              }}>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
-          </div>
         </article>
 
-        <article>
-          {/* 테이블 */}
+        {/* 테이블 */}
+        <article className='adMain__table'>
           <div>
-            <table border="1" cellPadding="8" cellSpacing="0" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className='adMain__table__RestList'>
               <thead>
                 <tr>
                   <th>ID</th>
@@ -196,8 +201,8 @@ export default function AdRest() {
                   <th>가게주소</th>
                   <th>지역</th>
                   <th>평점</th>
-                  <th>리뷰수</th>
-                  <th>좋아요수</th>
+                  <th>총 리뷰</th>
+                  <th>찜 개수</th>
                   <th>공개</th>
                   <th>상태</th>
                 </tr>
@@ -215,35 +220,40 @@ export default function AdRest() {
                 {items.map((r) => (
                   <tr key={r.restaurantId}>
                     <td>{r.restaurantId}</td>
-                    <td>
-                      <span
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => navigate(`/admin/restaurant/${r.restaurantId}`)}>
-                        {r.name || '-'}
-                      </span>
+                    <td onClick={() => navigate(`/admin/restaurant/${r.restaurantId}`)}>
+                      {r.name || '-'}
                     </td>
-                    <td>
-                      <span
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => navigate(`/admin/restaurant/${r.restaurantId}`)}>
-                        {r.address || '-'}
-                      </span>
+                    <td onClick={() => navigate(`/admin/restaurant/${r.restaurantId}`)}>
+                      {r.address || '-'}
                     </td>
                     <td>{r?.region?.depth1 || r?.region?.depth2 || '-'}</td>
                     <td>{calcRatingAvg(r)}</td>
                     <td>{Number(r.reviewCount) || 0}</td>
                     <td>{Number(r.likeCount) || 0}</td>
-                    <td>{r.isPublished ? 'Y' : 'N'}</td>
-                    <td>{r.dataStatus || '-'}</td>
+                    <td>{r.isPublished ? <Eye size={18} /> : <EyeOff size={18} color='#555' />}</td>
+                    <td>
+                      {r.dataStatus ? (
+                        <div className={`chip ${
+                          r.dataStatus === 'RAW' ? 'chip-raw' :
+                          r.dataStatus === 'BASIC' ? 'chip-basic' :
+                          r.dataStatus === 'VERIFIED' ? 'chip-verified' : ''
+                        }`}>
+                          {r.dataStatus}
+                        </div>
+                      ) : '-'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </article>
 
-          {/* 페이지네이션 */}
+        {/* 페이지네이션 */}
+        <article className='adMain__pagenation'>
           <AdPagination page={page} total={total} limit={limit} onChange={(p) => setPage(p)} />
         </article>
+        
       </section>
     </div>
   );

@@ -66,64 +66,66 @@ export default function Login(){
   };
 
   return(
-    <div className="login">
-      <section className="login-form">
-        <form className="login-form__form" onSubmit={handleSubmit}>
-          <h1 className="login-form__title">LOGIN</h1>
-
-          <ul className="login-form__field">
-            <li className="login-form__label">ID</li>
-            <li>
+    <div className="page-static login">
+      <div className="page-static__wrap">
+        <section className="login-form">
+          <form className="login-form__form" onSubmit={handleSubmit}>
+            <h1 className="login-form__title">LOGIN</h1>
+        
+            <ul className="login-form__field">
+              <li className="login-form__label">ID</li>
+              <li>
+                <input
+                  ref={emailRef}
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="이메일을 입력해주세요"
+                  className="login-form__input"
+                />
+              </li>
+            </ul>
+        
+            <ul className="login-form__field">
+              <li className="login-form__label">PASSWORD</li>
+              <li>
+                <input
+                  type="password"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="비밀번호를 입력해 주세요"
+                  className="login-form__input"
+                />
+              </li>
+            </ul>
+        
+            <label className="login-form__remember">
               <input
-                ref={emailRef}
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="이메일을 입력해주세요"
-                className="login-form__input"
+                type="checkbox"
+                checked={rememberId}
+                onChange={(e) => setRememberId(e.target.checked)}
               />
-            </li>
-          </ul>
-
-          <ul className="login-form__field">
-            <li className="login-form__label">PASSWORD</li>
-            <li>
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="비밀번호를 입력해 주세요"
-                className="login-form__input"
-              />
-            </li>
-          </ul>
-
-          <label className="login-form__remember">
-            <input
-              type="checkbox"
-              checked={rememberId}
-              onChange={(e) => setRememberId(e.target.checked)}
-            />
-            <p>아이디 저장</p>
-          </label>
-
-          <button className="login-form__submit">로그인</button>
-        </form>
-      </section>
-
-      <section className="login-links">
-        <article className="login-links__item">
-          <p>아이디/비밀번호를 잊었다면</p>
-          <Link to="/login">아이디/비밀번호 찾기</Link>
-        </article>
-
-        <article className="login-links__item">
-          <p>아직 회원이 아니라면</p>
-          <Link to="/signup">회원가입</Link>
-        </article>
-      </section>
+              <p>아이디 저장</p>
+            </label>
+        
+            <button className="login-form__submit">로그인</button>
+          </form>
+        </section>
+        
+        <section className="login-links">
+          <article className="login-links__item">
+            <p>아이디/비밀번호를 잊었다면</p>
+            <Link to="/login">아이디/비밀번호 찾기</Link>
+          </article>
+        
+          <article className="login-links__item">
+            <p>아직 회원이 아니라면</p>
+            <Link to="/signup">회원가입</Link>
+          </article>
+        </section>
+      </div>
     </div>
   );
 }

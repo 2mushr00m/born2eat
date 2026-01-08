@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminReviewListApi } from '../../api/admin';
 import AdPagination from './components/AdPagination';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function AdReview() {
   const navigate = useNavigate();
@@ -104,105 +105,105 @@ export default function AdReview() {
   return (
     <div className="adMain">
       <section className="adMain__wrap">
+
+        {/* 타이틀 */}
         <article>
           <div className='adMain__title'>
             <h1><span>●</span> 리뷰 목록</h1>
           </div>
         </article>
 
-        <article>
-
-          {/* 검색/필터/정렬 */}
-          <div
-            style={{
-              marginTop: 12,
-              display: 'flex',
-              gap: 8,
-              flexWrap: 'wrap',
-              alignItems: 'center',
-            }}>
-            <input
-              value={inputQ}
-              onChange={(e) => setInputQ(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder="검색어(q)"
-            />
-            <button type="button" onClick={onSearch}>
-              검색
-            </button>
-            <button type="button" onClick={onResetAll}>
-              초기화
-            </button>
-
-            <span>검색범위</span>
-            <select
-              value={searchTarget}
-              onChange={(e) => {
-                setPage(1);
-                setSearchTarget(e.target.value);
-              }}>
-              <option value="USER">유저</option>
-              <option value="RESTAURANT">가게</option>
-              <option value="CONTENT">내용</option>
-            </select>
-
-            <span>정렬</span>
-            <select
-              value={sort || ''}
-              onChange={(e) => {
-                setPage(1);
-                setSort(e.target.value || null);
-              }}>
-              <option value="recent">최신순</option>
-              <option value="popular">좋아요순</option>
-              <option value="rating">별점순</option>
-            </select>
-
-            <span>공개여부</span>
-            <select
-              value={isVisible || ''}
-              onChange={(e) => {
-                setPage(1);
-                setIsVisible(e.target.value || null); // "true" | "false" | null
-              }}>
-              <option value="">전체</option>
-              <option value="true">공개</option>
-              <option value="false">비공개</option>
-            </select>
-
-            <span>페이지당</span>
-            <select
-              value={limit}
-              onChange={(e) => {
-                setPage(1);
-                setLimit(Number(e.target.value));
-              }}>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
+        {/* 필터/검색 + 로딩/정렬 */}
+        <article className='adMain__nav'>
+          <div className='adMain__nav__search'>
+            <div className='filter-box-admin'>
+              <span>검색범위</span>
+              <select
+                value={searchTarget}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearchTarget(e.target.value);
+                }}>
+                <option value="USER">유저</option>
+                <option value="RESTAURANT">가게</option>
+                <option value="CONTENT">내용</option>
+              </select>
+            
+              <span>공개여부</span>
+              <select
+                value={isVisible || ''}
+                onChange={(e) => {
+                  setPage(1);
+                  setIsVisible(e.target.value || null); // "true" | "false" | null
+                }}>
+                <option value="">전체</option>
+                <option value="true">공개</option>
+                <option value="false">비공개</option>
+              </select>
+            
+              <span>페이지당</span>
+              <select
+                value={limit}
+                onChange={(e) => {
+                  setPage(1);
+                  setLimit(Number(e.target.value));
+                }}>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+            <div className='search-box-admin'>
+              <input
+                value={inputQ}
+                onChange={(e) => setInputQ(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder="검색어(q)"
+              />
+              <button type="button" onClick={onSearch}>
+                검색
+              </button>
+              <button type="button" onClick={onResetAll}>
+                초기화
+              </button>
+            </div>
           </div>
+          <div className='adMain__nav__sort'>
+            <div>
+              {loading && <p>Loading...</p>}
+              {!loading && errMsg && <p>{errMsg}</p>}
+              {!loading && !errMsg && <p>총 {total}개</p>}
+            </div>
 
-          {/* 상태 */}
-          <div>
-            {loading && <p>Loading...</p>}
-            {!loading && errMsg && <p>{errMsg}</p>}
-            {!loading && !errMsg && <p>총 {total}개</p>}
+            <div>
+              <select
+                value={sort || ''}
+                onChange={(e) => {
+                  setPage(1);
+                  setSort(e.target.value || null);
+                }}>
+                <option value="recent">최신순</option>
+                <option value="popular">좋아요순</option>
+                <option value="rating">별점순</option>
+              </select>
+            </div>
           </div>
+        </article>
 
-          {/* 테이블 */}
+        {/* 테이블 */}
+        <article className='adMain__table'>
           <div>
-            <table border="1" cellPadding="8" cellSpacing="0" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className='adMain__table__ReviewList'>
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>가게명</th>
-                  <th>닉네임</th>
-                  <th>내용</th>
-                  <th>평점</th>
-                  <th>좋아요수</th>
+                  <th>작성자명</th>
+                  <th>리뷰 내용</th>
+                  <th>별점</th>
+                  <th>공감수</th>
                   <th>작성일</th>
-                  <th>공개</th>
+                  <th>공개여부</th>
                 </tr>
               </thead>
 
@@ -218,36 +219,31 @@ export default function AdReview() {
                 {items.map((r) => (
                   <tr key={r.reviewId}>
                     <td>{r.reviewId}</td>
-                    <td>
-                      <span
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => navigate(`/admin/restaurant/${r.restaurantId}`)}>
-                        {r.restaurantName || '-'}
-                      </span>
+                    <td onClick={() => navigate(`/admin/restaurant/${r.restaurantId}`)}>
+                      {r.restaurantName || '-'}
                     </td>
-                    <td>
-                      <span style={{ cursor: 'pointer' }} onClick={() => navigate(`/admin/member/${r.userId}`)}>
-                        {r.userNickname || '-'}
-                      </span>
+                    <td style={{ cursor: 'pointer' }} onClick={() => navigate(`/admin/member/${r.userId}`)}>
+                      {r.userNickname || '-'}
                     </td>
-                    <td>
-                      <span style={{ cursor: 'pointer' }} onClick={() => navigate(`/admin/review/${r.reviewId}`)}>
-                        {r.content}
-                      </span>
+                    <td onClick={() => navigate(`/admin/review/${r.reviewId}`)}>
+                      {r.content}
                     </td>
                     <td>{r.rating ?? '-'}</td>
                     <td>{r.likeCount ?? 0}</td>
                     <td>{fmtTime(r.createdAt)}</td>
-                    <td>{r.isVisible ? 'Y' : 'N'}</td>
+                    <td>{r.isVisible ? <Eye size={18} /> : <EyeOff size={18} color='#555' />}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </article>
 
-          {/* 페이지네이션 */}
+        {/* 페이지네이션 */}
+        <article className='adMain__pagenation'>
           <AdPagination page={page} total={total} limit={limit} onChange={(p) => setPage(p)} />
         </article>
+
       </section>
     </div>
   );

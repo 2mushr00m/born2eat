@@ -1,14 +1,13 @@
 @use '../../styles/variables.scss' as *;
 
-/* Page */
-.login {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: calc(100vh - 100px);
+.login{
+  .page-static__wrap{
+    width: 600px;
+    display: flex; flex-direction: column;
+    justify-content: center;
+  }
 }
 
-/* Login form */
 .login-form {
   width: 480px;
   margin: 0 auto;
@@ -60,6 +59,7 @@
     margin-top: 30px;
 
     border: none;
+    border-radius: 10px;
     background-color: $brown;
     color: #fff;
     font-weight: bold;

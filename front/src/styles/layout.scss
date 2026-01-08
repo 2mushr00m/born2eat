@@ -120,3 +120,18 @@
     }
   }
 }
+
+// page-static
+// 정적 페이지 고정 레이아웃
+.page-static{
+  display: flex; justify-content: center;
+  min-height: calc(100vh - 100px);
+  &__wrap{
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    margin: 5% 3%; padding: 8%;
+    width: 1024px;
+    text-align: center;
+  }
+}

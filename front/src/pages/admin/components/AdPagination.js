@@ -30,25 +30,30 @@ export default function AdPagination({ page, total, limit, onChange, size = 5 })
   if (totalPages <= 1) return null;
 
   return (
-    <div
-      style={{
-        marginTop: 12,
-        display: 'flex',
-        gap: 6,
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-      <button type="button" onClick={() => onChange(page - 1)} disabled={page <= 1}>
+    <div className='pagenation-btn'>
+      <button
+        className='pagenation-btn__prev'
+        type="button"
+        onClick={() => onChange(page - 1)} disabled={page <= 1}>
         &lt;
       </button>
 
       {pageButtons.map((p) => (
-        <button key={p} type="button" onClick={() => onChange(p)} aria-current={p === page ? 'page' : undefined}>
+        <button
+          className={`pagenation-btn__number ${p === page ? 'pagenation-btn__number-active' : ''}`}
+          key={p}
+          type="button"
+          onClick={() => onChange(p)}
+          aria-current={p === page ? 'page' : undefined}>
           {p}
         </button>
       ))}
 
-      <button type="button" onClick={() => onChange(page + 1)} disabled={page >= totalPages}>
+      <button
+        className='pagenation-btn__next'
+        type="button"
+        onClick={() => onChange(page + 1)}
+        disabled={page >= totalPages}>
         &gt;
       </button>
     </div>

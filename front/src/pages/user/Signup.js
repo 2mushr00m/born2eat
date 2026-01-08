@@ -109,94 +109,100 @@ export default function Signup() {
   };
 
   return (
-    <div className="signup_wrap">
-      <section>
-        <form id="signup" onSubmit={handleSubmit}>
-          <h1>회원가입</h1>
+    <div className="page-static signup signup">
+      <div className="page-static__wrap">
+        <section className="signup-form">
+          <form onSubmit={handleSubmit}>
+            <h1>회원가입</h1>
 
-          <ul>
-            <li>이메일 아이디<span> *</span></li>
-            <li>
-              <input
-                ref={emailRef}
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-              />
-            </li>
-          </ul>
-
-          <ul>
-            <li>비밀번호<span> *</span></li>
-            <li>
-              <input
-                name="password"
-                type="password"
-                value={form.password}
-                onChange={handleChange}
-                required
-              />
-            </li>
-          </ul>
-
-          <ul>
-            <li>연락처</li>
-            <li>
-              <input
-                name="phone"
-                type="tel"
-                value={form.phone}
-                onChange={handleChange}
-                pattern="[0-9]{10,11}"
-              />
-            </li>
-          </ul>
-
-          <ul>
-            <li>닉네임</li>
-            <li>
-              <input
-                name="nickname"
-                value={form.nickname}
-                onChange={handleChange}
-              />
-            </li>
-          </ul>
-
-          <label>
-            <p>
-              <input
-                type="checkbox"
-                checked={isAgree}
-                onChange={(e) => setIsAgree(e.target.checked)}
-              />
-              이용약관에 동의합니다.
-            </p>
-            <span onClick={() => setShowModal(true)}>
-              [이용약관 전문보기]
-            </span>
-          </label>
-          {showModal && (
-            <div className="modal">
-              <div className="modal__overlay" onClick={() => setShowModal(false)} />
-              <div className="modal__content">
-                <TermsPage />
-                <button onClick={() => setShowModal(false)}>닫기</button>
+            <ul>
+              <li>이메일 아이디<span> *</span></li>
+              <li>
+                <input
+                  ref={emailRef}
+                  name="email"
+                  type="email"
+                  value={form.email}
+                  placeholder="이메일을 입력해주세요"
+                  onChange={handleChange}
+                  required
+                />
+              </li>
+            </ul>
+        
+            <ul>
+              <li>비밀번호<span> *</span></li>
+              <li>
+                <input
+                  name="password"
+                  type="password"
+                  value={form.password}
+                  placeholder="비밀번호를 입력해주세요"
+                  onChange={handleChange}
+                  required
+                />
+              </li>
+            </ul>
+        
+            <ul>
+              <li>연락처</li>
+              <li>
+                <input
+                  name="phone"
+                  type="tel"
+                  value={form.phone}
+                  placeholder="연락처를 숫자만 입력해주세요"
+                  onChange={handleChange}
+                  pattern="[0-9]{10,11}"
+                />
+              </li>
+            </ul>
+        
+            <ul>
+              <li>닉네임</li>
+              <li>
+                <input
+                  name="nickname"
+                  value={form.nickname}
+                  placeholder="사용하실 닉네임을 입력해주세요"
+                  onChange={handleChange}
+                />
+              </li>
+            </ul>
+        
+            <label>
+              <p>
+                <input
+                  type="checkbox"
+                  checked={isAgree}
+                  onChange={(e) => setIsAgree(e.target.checked)}
+                />
+                이용약관에 동의합니다.
+              </p>
+              <span onClick={() => setShowModal(true)}>
+                [이용약관 전문보기]
+              </span>
+            </label>
+            {showModal && (
+              <div className="modal">
+                <div className="modal__overlay" onClick={() => setShowModal(false)} />
+                <div className="modal__content">
+                  <TermsPage />
+                  <button onClick={() => setShowModal(false)}>닫기</button>
+                </div>
               </div>
-            </div>
-          )}
-          <button type="submit">회원가입</button>
-        </form>
-      </section>
-
-      <section className="login-links">
-        <article className="login-links__item">
-          <p>이미 회원이라면</p>
-          <Link to="/login">로그인</Link>
-        </article>
-      </section>
+            )}
+            <button type="submit">회원가입</button>
+          </form>
+        </section>
+        
+        <section className="login-links">
+          <article className="login-links__item">
+            <p>이미 회원이라면</p>
+            <Link to="/login">로그인</Link>
+          </article>
+        </section>
+      </div>
     </div>
   );
 }

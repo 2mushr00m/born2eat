@@ -8,7 +8,7 @@ export default function AdSide() {
         <ul>
           <li><h3>회원관리</h3></li>
           <li><Link to="/admin/member">→ 회원목록</Link></li>
-          <li><Link to="/admin/suggestion">→ 회원문의</Link></li>
+          <li><Link to="/admin/suggestion">→ 문의목록</Link></li>
 
           <li><h3>식당관리</h3></li>
           <li><Link to="/admin/restaurant">→ 식당목록</Link></li>

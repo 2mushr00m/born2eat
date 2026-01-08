@@ -121,105 +121,103 @@ export default function AdSugg() {
   return (
     <div className="adMain">
       <section className="adMain__wrap">
+
+        {/* 타이틀 */}
         <article className='adMain__title'>
           <div>
             <h1><span>●</span> 문의 목록</h1>
           </div>
         </article>
-        <article>
 
-          {/* 검색/필터 */}
-          <div
-            style={{
-              marginTop: 12,
-              display: 'flex',
-              gap: 8,
-              flexWrap: 'wrap',
-              alignItems: 'center',
-            }}>
-            <input
-              value={inputQ}
-              onChange={(e) => setInputQ(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder="검색어(q) - 제목/내용"
-            />
-            <button type="button" onClick={onSearch}>
-              검색
-            </button>
-            <button type="button" onClick={onResetAll}>
-              초기화
-            </button>
+        {/* 필터/검색 + 로딩 */}
+        <article className='adMain__nav'>
+          <div className='adMain__nav__search'>
+            <div className='filter-box-admin'>
+              <span>검색범위</span>
+              <select
+                value={searchTarget}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearchTarget(e.target.value);
+                }}>
+                <option value="ALL">제목+내용</option>
+                <option value="TITLE">제목</option>
+                <option value="CONTENT">내용</option>
+              </select>
 
-            <span>검색범위</span>
-            <select
-              value={searchTarget}
-              onChange={(e) => {
-                setPage(1);
-                setSearchTarget(e.target.value);
-              }}>
-              <option value="ALL">제목+내용</option>
-              <option value="TITLE">제목</option>
-              <option value="CONTENT">내용</option>
-            </select>
+              <span>상태</span>
+              <select
+                value={status || ''}
+                onChange={(e) => {
+                  setPage(1);
+                  setStatus(e.target.value || null);
+                }}>
+                <option value="">전체</option>
+                <option value="PENDING">미답변</option>
+                <option value="ANSWERED">답변 완료</option>
+              </select>
 
-            <span>상태</span>
-            <select
-              value={status || ''}
-              onChange={(e) => {
-                setPage(1);
-                setStatus(e.target.value || null);
-              }}>
-              <option value="">전체</option>
-              <option value="PENDING">미답변</option>
-              <option value="ANSWERED">답변 완료</option>
-            </select>
+              <span>유형</span>
+              <select
+                value={type || ''}
+                onChange={(e) => {
+                  setPage(1);
+                  setType(e.target.value || null);
+                }}>
+                <option value="">전체</option>
+                <option value="GENERAL">기본</option>
+                <option value="BUG">버그</option>
+                <option value="RESTAURANT">음식점</option>
+                <option value="ACCOUNT">계정</option>
+                <option value="OTHER">기타</option>
+              </select>
 
-            <span>유형</span>
-            <select
-              value={type || ''}
-              onChange={(e) => {
-                setPage(1);
-                setType(e.target.value || null);
-              }}>
-              <option value="">전체</option>
-              <option value="GENERAL">기본</option>
-              <option value="BUG">버그</option>
-              <option value="RESTAURANT">음식점</option>
-              <option value="ACCOUNT">계정</option>
-              <option value="OTHER">기타</option>
-            </select>
-
-            <span>페이지당</span>
-            <select
-              value={limit}
-              onChange={(e) => {
-                setPage(1);
-                setLimit(Number(e.target.value));
-              }}>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
+              <span>페이지당</span>
+              <select
+                value={limit}
+                onChange={(e) => {
+                  setPage(1);
+                  setLimit(Number(e.target.value));
+                }}>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+            <div className='search-box-admin'>
+              <input
+                value={inputQ}
+                onChange={(e) => setInputQ(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder="검색어(q) - 제목/내용"
+              />
+              <button type="button" onClick={onSearch}>
+                검색
+              </button>
+              <button type="button" onClick={onResetAll}>
+                초기화
+              </button>
+            </div>
           </div>
-
-          {/* 상태 */}
-          <div>
+          <div className='adMain__nav__sort'>
             {loading && <p>Loading...</p>}
             {!loading && errMsg && <p>{errMsg}</p>}
             {!loading && !errMsg && <p>총 {total}개</p>}
           </div>
+        </article>
 
-          {/* 테이블 */}
+        {/* 테이블 */}
+        <article className='adMain__table'>
           <div>
-            <table border="1" cellPadding="8" cellSpacing="0" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className='adMain__table__SuggList'>
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>제목</th>
                   <th>분류</th>
                   <th>작성자</th>
-                  <th>답변</th>
                   <th>작성일</th>
+                  <th>답변여부</th>
                   <th>답변일</th>
                 </tr>
               </thead>
@@ -237,25 +235,25 @@ export default function AdSugg() {
                   return (
                     <tr key={it.inquiryId}>
                       <td>{it.inquiryId}</td>
-                      <td title={it.title || ''}>
-                        <span
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => navigate(`/admin/suggestion/${it.inquiryId}`)}>
-                          {it.title}
-                        </span>
+                      <td title={it.title || ''} onClick={() => navigate(`/admin/suggestion/${it.inquiryId}`)}>
+                        {it.title}
                       </td>
                       <td>{typeLabel(it.type)}</td>
-                      <td>
-                        {it.userId != null ? (
-                          <span style={{ cursor: 'pointer' }} onClick={() => navigate(`/admin/member/${it.userId}`)}>
-                            {it.userNickname || '-'}
-                          </span>
-                        ) : (
-                          <span>{it.userNickname || '-'}</span> // 비회원 문의면 클릭 없음
-                        )}
+                      <td
+                        className={it.userId == null ? 'notMember' : ''}
+                        onClick={it.userId != null ? () => navigate(`/admin/member/${it.userId}`) : undefined}>
+                        {it.userId != null
+                          ? (it.userNickname || '-')
+                          : <span>{it.userNickname || '비회원'}</span>}
                       </td>
-                      <td>{statusLabel(it.status)}</td>
                       <td>{fmtTime(it.createdAt)}</td>
+                      <td>
+                        {it.status != null ? (
+                          <div className={`chip ${it.status === 'ANSWERED' ? 'chip-answered' : 'chip-pending'}`}>
+                            {statusLabel(it.status)}
+                          </div>
+                        ) : '-'}
+                      </td>
                       <td>{fmtTime(it.answeredAt)}</td>
                     </tr>
                   );
@@ -263,10 +261,13 @@ export default function AdSugg() {
               </tbody>
             </table>
           </div>
+        </article>
 
-          {/* 페이지네이션 */}
+        {/* 페이지네이션 */}
+        <article className='adMain__pagenation'>
           <AdPagination page={page} total={total} limit={limit} onChange={(p) => setPage(p)} />
         </article>
+
       </section>
     </div>
   );

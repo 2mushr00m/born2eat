@@ -1,3 +1,9 @@
 import api from './api';
 
-export const postInquiry = (formData) => api.post('/inquiries', formData);
+export const postInquiry = ({ type, title, content }) => {
+  return api.post('/inquiries', {
+    type,
+    title,
+    content,
+  });
+};
