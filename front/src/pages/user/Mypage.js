@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { getMe, getMyLikes, getMyReviews, getMyInquiries } from "../../api/me";
-import { apiImageUrl } from "../../api/upload";
-import "./Mypage.scss";
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { getMe, getMyLikes, getMyReviews, getMyInquiries } from '../../api/me';
+import { apiImageUrl } from '../../api/upload';
+import NoPhoto from './components/NoPhoto';
+import './Mypage.scss';
 
 export default function MyPage() {
   const [me, setMe] = useState(null);
@@ -39,14 +40,7 @@ export default function MyPage() {
       <section className="mypage__profile">
         <article>
           <div className="mypage__profile__img">
-            <img
-              src={
-                me.profileUrl
-                  ? apiImageUrl(me.profileUrl)
-                  : "/assets/default_profile.png"
-              }
-              alt="profile"
-            />
+            <img src={me.profileUrl ? apiImageUrl(me.profileUrl) : '/assets/default_profile.png'} alt="profile" />
           </div>
           <h4>{me.nickname}님</h4>
           <Link to="/mypage/edit">
@@ -70,12 +64,13 @@ export default function MyPage() {
                 <li key={i.restaurantId} className="slider-item">
                   <Link to={`/restaurant/${i.restaurantId}`}>
                     <div className="card">
-                      <div
-                        className="card-image"
-                        style={{
-                          backgroundImage: `url(${i.mainPhoto})`,
-                        }}
-                      />
+                      {i.mainPhoto ? (
+                        <div className="card-image" style={{ backgroundImage: `url(${apiImageUrl(i.mainPhoto)})` }} />
+                      ) : (
+                        <div className="card-image">
+                          <NoPhoto />
+                        </div>
+                      )}
                       <div className="card-body-small">
                         <div>
                           <h3>{i.name}</h3>
@@ -103,15 +98,13 @@ export default function MyPage() {
               <ul>
                 <li>
                   <h4>{i.restaurantId}</h4>
-                  <p>
-                    작성일: {new Date(i.createdAt).toLocaleDateString("ko-KR")}
-                  </p>
+                  <p>작성일: {new Date(i.createdAt).toLocaleDateString('ko-KR')}</p>
                 </li>
                 <li>
                   <span>
-                    {"★".repeat(i.rating)}
-                    {"☆".repeat(5 - i.rating)}
-                  </span>{" "}
+                    {'★'.repeat(i.rating)}
+                    {'☆'.repeat(5 - i.rating)}
+                  </span>{' '}
                   {i.rating}점
                 </li>
                 <li className="tag-list">
@@ -126,11 +119,7 @@ export default function MyPage() {
                   <li className="photo-box">
                     <div className="photo-gallery">
                       {i.photos.map((photo) => (
-                        <img
-                          key={photo.id}
-                          src={photo.path}
-                          alt={photo.caption || "리뷰 사진"}
-                        />
+                        <img key={photo.id} src={photo.path} alt={photo.caption || '리뷰 사진'} />
                       ))}
                     </div>
                   </li>
@@ -155,14 +144,10 @@ export default function MyPage() {
               <ul>
                 <li>
                   <h4>Q. {i.title}</h4>
-                  <p>
-                    작성일: {new Date(i.createdAt).toLocaleDateString("ko-KR")}
-                  </p>
+                  <p>작성일: {new Date(i.createdAt).toLocaleDateString('ko-KR')}</p>
                 </li>
                 <li>{i.content}</li>
-                <li>
-                  A. {i.answer == null ? "답변을 기다리는 중···" : i.answer}
-                </li>
+                <li>A. {i.answer == null ? '답변을 기다리는 중···' : i.answer}</li>
               </ul>
             </div>
           ))}
