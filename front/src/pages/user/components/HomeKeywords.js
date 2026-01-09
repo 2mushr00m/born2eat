@@ -2,14 +2,13 @@ import { useState, useMemo } from 'react';
 
 /**
  * @param {{
- *  mode?: 'old' | 'new' | 'tree' | 'multi';
+ *  mode?: 'tree' | 'multi';
  *  list: any[];
  *  selected: any;
  *  onSelect: (v: any) => void;
  * }} props
  */
-export default function KeywordSelector({ mode = 'new', list, selected, onSelect }) {
-  const isOld = mode === 'old';
+export default function KeywordSelector({ mode, list, selected, onSelect }) {
   const isTree = mode === 'tree';
   const isMulti = mode === 'multi';
 
@@ -23,29 +22,6 @@ export default function KeywordSelector({ mode = 'new', list, selected, onSelect
     const children = Array.isArray(currentNode?.children) ? currentNode.children : [];
     return children;
   }, [list, isTop, currentNode]);
-
-  if (isOld) {
-    return (
-      <div className="keyword-box">
-        <button
-          type="button"
-          className={`keyword-box__item ${!selected ? 'is-active' : ''}`}
-          onClick={() => onSelect(null)}>
-          전체
-        </button>
-
-        {list.map((value) => (
-          <button
-            key={value}
-            type="button"
-            className={`keyword-box__item ${selected === value ? 'is-active' : ''}`}
-            onClick={() => onSelect(value)}>
-            {value}
-          </button>
-        ))}
-      </div>
-    );
-  }
 
   if (isMulti) {
     const toggle = (code) => {
@@ -127,6 +103,12 @@ export default function KeywordSelector({ mode = 'new', list, selected, onSelect
 
   return (
     <div className="keyword-box">
+      <button
+        type="button"
+        className={`keyword-box__item ${!selected ? 'is-active' : ''}`}
+        onClick={() => onSelect(null)}>
+        전체
+      </button>
       {list.map((it) => (
         <button
           key={it.code}

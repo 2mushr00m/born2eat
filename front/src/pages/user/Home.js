@@ -59,6 +59,25 @@ export default function Home() {
         setAllFoodCategories(foodTags);
         const tags = (await getTags('tag')).data.result;
         setAllTags(tags);
+        setAllDepth1([
+          { code: '1100000000', name: '서울' },
+          { code: '2600000000', name: '부산' },
+          { code: '2700000000', name: '대구' },
+          { code: '2800000000', name: '인천' },
+          { code: '2900000000', name: '광주' },
+          { code: '3000000000', name: '대전' },
+          { code: '3100000000', name: '울산' },
+          { code: '3600000000', name: '세종' },
+          { code: '4100000000', name: '경기' },
+          { code: '5100000000', name: '강원' },
+          { code: '4300000000', name: '충북' },
+          { code: '4400000000', name: '충남' },
+          { code: '5200000000', name: '전북' },
+          { code: '4600000000', name: '전남' },
+          { code: '4700000000', name: '경북' },
+          { code: '4800000000', name: '경남' },
+          { code: '5000000000', name: '제주' },
+        ]);
       } finally {
         setLoading(false);
       }
@@ -69,12 +88,6 @@ export default function Home() {
         const { data } = await getRestList();
         const items = data.result.items;
         setRestaurantList(items);
-        setAllDepth1(
-          items
-            .map((r) => r.region?.depth1)
-            .filter(Boolean)
-            .filter((v, i, arr) => arr.indexOf(v) === i),
-        );
       } finally {
         setLoading(false);
       }
@@ -92,17 +105,12 @@ export default function Home() {
           q: search || undefined,
           food: selectedFood || undefined,
           tags: selectedTags.join(',') || undefined,
+          region: selectedDepth1 || undefined,
         };
         const { data } = await getRestList(params);
         const items = data.result.items;
         setRestaurantList(items);
         setNoResult(items.length === 0);
-        setAllDepth1(
-          items
-            .map((r) => r.region?.depth1)
-            .filter(Boolean)
-            .filter((v, i, arr) => arr.indexOf(v) === i),
-        );
       } finally {
         setLoading(false);
       }
@@ -157,7 +165,7 @@ export default function Home() {
           </div>
           <div className="home-tabs__panel">
             {activeTab === 0 && (
-              <KeywordSelector mode="old" list={allDepth1} selected={selectedDepth1} onSelect={setSelectedDepth1} />
+              <KeywordSelector list={allDepth1} selected={selectedDepth1} onSelect={setSelectedDepth1} />
             )}
 
             {activeTab === 1 && (
