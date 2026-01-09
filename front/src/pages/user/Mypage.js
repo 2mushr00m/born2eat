@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getMe, getMyLikes, getMyReviews, getMyInquiries } from '../../api/me';
+import { getTags } from '../../api/restaurants';
 import { apiImageUrl } from '../../api/upload';
+import api from '../../api/api';
+import ReviewForm from './components/ReviewForm';
 import NoPhoto from './components/NoPhoto';
 import './Mypage.scss';
 
@@ -11,6 +14,9 @@ export default function MyPage() {
   const [reviews, setReviews] = useState([]);
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [openModalId, setOpenModalId] = useState(null);
+  const [allTags, setAllTags] = useState([]);
 
   useEffect(() => {
     const fetchMyPageData = async () => {
@@ -25,6 +31,9 @@ export default function MyPage() {
         setLikes(likesRes.data.result.items);
         setReviews(reviewsRes.data.result.items);
         setInquiries(inquiriesRes.data.result.items);
+
+        const tagRes = await getTags('tag');
+        setAllTags(tagRes?.data?.result || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -97,7 +106,9 @@ export default function MyPage() {
             <div key={i.reviewId}>
               <ul>
                 <li>
-                  <h4>{i.restaurantId}</h4>
+                  <Link to={`/restaurant/${i.restaurantId}`}>
+                    <h4>{i.restaurantName}</h4>
+                  </Link>
                   <p>작성일: {new Date(i.createdAt).toLocaleDateString('ko-KR')}</p>
                 </li>
                 <li>
@@ -108,9 +119,9 @@ export default function MyPage() {
                   {i.rating}점
                 </li>
                 <li className="tag-list">
-                  {i.tags?.map((name) => (
-                    <span key={name} className="tag-item">
-                      #{name}
+                  {i.tags?.map((tag) => (
+                    <span key={tag.code} className="tag-item">
+                      #{tag.name}
                     </span>
                   ))}
                 </li>
@@ -119,14 +130,46 @@ export default function MyPage() {
                   <li className="photo-box">
                     <div className="photo-gallery">
                       {i.photos.map((photo) => (
-                        <img key={photo.id} src={photo.path} alt={photo.caption || '리뷰 사진'} />
+                        <img key={photo.id} src={apiImageUrl(photo.path)} alt={photo.caption || '리뷰 사진'} />
                       ))}
                     </div>
                   </li>
                 )}
               </ul>
               <div className="btn-box">
-                <button>수정</button>
+                <button
+                  onClick={() => {
+                    setShowModal(true);
+                    setOpenModalId(i.reviewId);
+                  }}>
+                  수정
+                </button>
+                {showModal && openModalId === i.reviewId && (
+                  <div className="modal">
+                    <div className="modal__overlay" onClick={() => setShowModal(false)} />
+                    <div className="modal__content">
+                      <ReviewForm
+                        mode="edit"
+                        initialTags={allTags}
+                        initialValue={i}
+                        reviewId={i.reviewId}
+                        onClose={() => setShowModal(false)}
+                        onSaved={() => {
+                          api
+                            .get(`/me/reviews`)
+                            .then((res) => {
+                              setReviews(res.data.result.items);
+                              setShowModal(false);
+                            })
+                            .catch(() => {
+                              setReviews([]);
+                              setShowModal(false);
+                            });
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
                 <button>삭제</button>
               </div>
             </div>

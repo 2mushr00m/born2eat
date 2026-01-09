@@ -369,13 +369,6 @@ export async function answerInquiry(inquiryId, payload, opt) {
         message: '해당 문의가 존재하지 않습니다.',
         data: { targetId: inquiryId },
       });
-
-    if (item.status === INQUIRY_STATUS.ANSWERED)
-      throw new AppError(ERR.CONFLICT, {
-        message: '이미 답변이 등록된 문의입니다.',
-        data: { targetId: inquiryId },
-      });
-
     await conn.execute(
       `
       UPDATE inquiry
@@ -384,7 +377,6 @@ export async function answerInquiry(inquiryId, payload, opt) {
           answered_by_user_id = :actorId,
           answered_at = NOW()
       WHERE inquiry_id = :inquiryId
-        AND status = 'PENDING'
       `,
       { inquiryId, answer, actorId },
     );

@@ -43,6 +43,7 @@ app.set('trust proxy', true); // HTTP → HTTPS
 // 5) 정적 파일
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 app.use('/upload', (req, res, next) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();

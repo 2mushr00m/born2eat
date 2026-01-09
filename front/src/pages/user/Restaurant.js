@@ -14,9 +14,11 @@ export default function Restaurant() {
   const [restaurant, setRestaurant] = useState(null);
   const [restaurantReview, setRestaurantReview] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [openModalId, setOpenModalId] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [allTags, setAllTags] = useState([]);
   const myId = null; // 예: /auth/me로 받아온 값
 
   useEffect(() => {
@@ -49,6 +51,17 @@ export default function Restaurant() {
         console.error('리뷰 로딩 실패:', err);
         setRestaurantReview([]);
       });
+
+    // 수정용 태그 조회
+    api
+      .get(`/tags`)
+      .then((res) => {
+        setAllTags(res.data.result);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError('데이터 로딩 중 오류가 발생했습니다.');
+      });
   }, [id]);
 
   if (loading) return null;
@@ -74,7 +87,7 @@ export default function Restaurant() {
             <div className=" rest__top__star">
               <p>
                 <span>
-                  {restaurant.reviewCount ? restaurant.ratingSum / restaurant.reviewCount : restaurant.ratingSum}
+                  {restaurant.reviewCount > 0 ? (restaurant.ratingSum / restaurant.reviewCount).toFixed(1) : '0.0'}
                 </span>
               </p>
               <p>({restaurant.reviewCount || '0'}개)</p>
@@ -89,9 +102,7 @@ export default function Restaurant() {
           {restaurant.tags?.length > 0 && (
             <ul className="tag-list">
               {restaurant.tags.map((tag) => (
-                <li key={tag} className="tag-item-color">
-                  #{tag}
-                </li>
+                <li className="tag-item-color">#{tag}</li>
               ))}
             </ul>
           )}
@@ -203,13 +214,20 @@ export default function Restaurant() {
             {activeTab === 2 && (
               <div className="tabBox__contents__review">
                 <h2>📝 맛집탐험가들의 솔직 리뷰 </h2>
-                <button onClick={() => setShowModal(true)}>리뷰 쓰기</button>
-                {showModal && (
+                <button
+                  onClick={() => {
+                    setShowModal(true);
+                    setOpenModalId(null);
+                  }}>
+                  리뷰 쓰기
+                </button>
+                {showModal && openModalId === null && (
                   <div className="modal">
                     <div className="modal__overlay" onClick={() => setShowModal(false)} />
                     <div className="modal__content">
                       <ReviewForm
                         restaurantId={id}
+                        initialTags={allTags}
                         onClose={() => setShowModal(false)}
                         onSaved={() => {
                           api
@@ -245,9 +263,9 @@ export default function Restaurant() {
                           </p>
                         </li>
                         <li className="tag-list">
-                          {i.tags?.map((name) => (
-                            <span key={name} className="tag-item">
-                              #{name}
+                          {i.tags?.map((tag) => (
+                            <span key={tag.code} className="tag-item">
+                              #{tag.name}
                             </span>
                           ))}
                         </li>
@@ -264,7 +282,39 @@ export default function Restaurant() {
                         {(i.userId === myId || true) && ( // 일단은 전부 포함
                           <li>
                             <div className="btn-box">
-                              <button onClick={() => alert('(구현하면서 본인 것만 뜨게 바꿀 예정)')}>수정</button>
+                              <button
+                                onClick={() => {
+                                  setShowModal(true);
+                                  setOpenModalId(i.reviewId);
+                                }}>
+                                수정
+                              </button>
+                              {showModal && openModalId === i.reviewId && (
+                                <div className="modal">
+                                  <div className="modal__overlay" onClick={() => setShowModal(false)} />
+                                  <div className="modal__content">
+                                    <ReviewForm
+                                      mode="edit"
+                                      initialTags={allTags}
+                                      initialValue={i}
+                                      reviewId={i.reviewId}
+                                      onClose={() => setShowModal(false)}
+                                      onSaved={() => {
+                                        api
+                                          .get(`/restaurants/${id}/reviews`)
+                                          .then((res) => {
+                                            setRestaurantReview(res.data.result?.items || []);
+                                            setShowModal(false);
+                                          })
+                                          .catch(() => {
+                                            setRestaurantReview([]);
+                                            setShowModal(false);
+                                          });
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
                               <button onClick={() => alert('(구현하면서 본인 것만 뜨게 바꿀 예정)')}>삭제</button>
                             </div>
                           </li>
