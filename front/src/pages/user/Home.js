@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import api from '../../api/api';
+import { getRestList, getTags } from '../../api/restaurants';
 
 import KeywordSelector from './components/HomeKeywords';
 import HomeMap from './components/HomeMap';
@@ -17,7 +17,6 @@ export default function Home() {
   const [search, setSearch] = useState('');
 
   // 데이터
-  const [allRestaurants, setAllRestaurants] = useState([]);
   const [restaurantList, setRestaurantList] = useState([]);
 
   // 필터 목록
@@ -28,7 +27,7 @@ export default function Home() {
   // 선택값
   const [selectedDepth1, setSelectedDepth1] = useState(null);
   const [selectedFood, setSelectedFood] = useState(null);
-  const [selectedTag, setSelectedTag] = useState(null);
+  const [selectedTags, setSelectedTags] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [noResult, setNoResult] = useState(false);
@@ -48,57 +47,68 @@ export default function Home() {
     setSearch('');
     setSelectedDepth1(null);
     setSelectedFood(null);
-    setSelectedTag(null);
+    setSelectedTags([]);
   };
 
-  /* 전체 목록 조회 */
+  /* 초기 조회 */
   useEffect(() => {
+    const fetchTags = async () => {
+      setLoading(true);
+      try {
+        const foodTags = (await getTags('food')).data.result;
+        setAllFoodCategories(foodTags);
+        const tags = (await getTags('tag')).data.result;
+        setAllTags(tags);
+      } finally {
+        setLoading(false);
+      }
+    };
     const fetchRestaurants = async () => {
       setLoading(true);
       try {
-        const { data } = await api.get('/restaurants');
+        const { data } = await getRestList();
         const items = data.result.items;
-        setAllRestaurants(items);
+        setRestaurantList(items);
         setAllDepth1(
           items
             .map((r) => r.region?.depth1)
             .filter(Boolean)
             .filter((v, i, arr) => arr.indexOf(v) === i),
         );
-        setAllFoodCategories(
-          items
-            .map((r) => r.foodCategory)
-            .filter(Boolean)
-            .filter((v, i, arr) => arr.indexOf(v) === i),
-        );
-        setAllTags(items.flatMap((r) => r.tags || []).filter((v, i, arr) => arr.indexOf(v) === i));
       } finally {
         setLoading(false);
       }
     };
+    fetchTags();
     fetchRestaurants();
   }, []);
 
-  /* 필터링 */
+  /* 검색 및 필터링 */
   useEffect(() => {
-    let filtered = allRestaurants;
-    if (search) {
-      filtered = filtered.filter(
-        (r) => r.name.includes(search) || r.mainFood?.includes(search) || r.foodCategory?.includes(search),
-      );
-    }
-    if (selectedDepth1) {
-      filtered = filtered.filter((r) => r.region?.depth1 === selectedDepth1);
-    }
-    if (selectedFood) {
-      filtered = filtered.filter((r) => r.foodCategory === selectedFood);
-    }
-    if (selectedTag) {
-      filtered = filtered.filter((r) => r.tags?.includes(selectedTag));
-    }
-    setRestaurantList(filtered);
-    setNoResult(filtered.length === 0);
-  }, [search, selectedDepth1, selectedFood, selectedTag, allRestaurants]);
+    const fetchfilteredRestaurants = async () => {
+      setLoading(true);
+      try {
+        const params = {
+          q: search || undefined,
+          food: selectedFood || undefined,
+          tags: selectedTags.join(',') || undefined,
+        };
+        const { data } = await getRestList(params);
+        const items = data.result.items;
+        setRestaurantList(items);
+        setNoResult(items.length === 0);
+        setAllDepth1(
+          items
+            .map((r) => r.region?.depth1)
+            .filter(Boolean)
+            .filter((v, i, arr) => arr.indexOf(v) === i),
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchfilteredRestaurants();
+  }, [search, selectedDepth1, selectedFood, selectedTags]);
 
   /* 검색 */
   const handleSearch = () => setSearch(keyword);
@@ -147,14 +157,21 @@ export default function Home() {
           </div>
           <div className="home-tabs__panel">
             {activeTab === 0 && (
-              <KeywordSelector list={allDepth1} selected={selectedDepth1} onSelect={setSelectedDepth1} />
+              <KeywordSelector mode="old" list={allDepth1} selected={selectedDepth1} onSelect={setSelectedDepth1} />
             )}
 
             {activeTab === 1 && (
-              <KeywordSelector list={allFoodCategories} selected={selectedFood} onSelect={setSelectedFood} />
+              <KeywordSelector
+                mode="tree"
+                list={allFoodCategories}
+                selected={selectedFood}
+                onSelect={setSelectedFood}
+              />
             )}
 
-            {activeTab === 2 && <KeywordSelector list={allTags} selected={selectedTag} onSelect={setSelectedTag} />}
+            {activeTab === 2 && (
+              <KeywordSelector mode="multi" list={allTags} selected={selectedTags} onSelect={setSelectedTags} />
+            )}
           </div>
         </div>
       </section>

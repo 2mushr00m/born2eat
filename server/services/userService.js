@@ -273,3 +273,91 @@ export async function deleteUser(userId) {
     conn.release();
   }
 }
+
+// ADMIN 회원 목록 조회
+export async function readUserListAdmin(filter) {
+  const conn = await db.getConnection();
+  try {
+    const where = [];
+    const params = [];
+
+    if (filter.q) {
+      where.push('(nickname LIKE ? OR email LIKE ?)');
+      params.push(`%${filter.q}%`, `%${filter.q}%`);
+    }
+
+    if (filter.status) {
+      where.push('status = ?');
+      params.push(filter.status);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const limit = Number(filter.limit) || 10;
+    const page = Number(filter.page) || 1;
+    const offset = (page - 1) * limit;
+
+    // ⭐ query() 사용
+    const [items] = await conn.query(
+      `
+      SELECT
+        user_id AS userId,
+        email,
+        nickname,
+        role,
+        status,
+        profile_url AS profileUrl,
+        created_at AS createdAt
+      FROM \`user\`
+      ${whereSql}
+      ORDER BY created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+      `,
+      params,
+    );
+
+    const [countRows] = await conn.query(
+      `
+      SELECT COUNT(*) AS total
+      FROM \`user\`
+      ${whereSql}
+      `,
+      params,
+    );
+
+    return {
+      items,
+      total: countRows[0]?.total ?? 0,
+      page,
+      limit,
+    };
+  } finally {
+    conn.release?.();
+  }
+}
+
+// ADMIN 회원 상세 조회
+export async function readUserAdmin(userId) {
+  const conn = await db.getConnection();
+  try {
+    const [rows] = await conn.query(
+      `
+      SELECT
+        user_id AS userId,
+        email,
+        nickname,
+        role,
+        status,
+        profile_url AS profileUrl,
+        created_at AS createdAt
+      FROM \`user\`
+      WHERE user_id = ?
+      `,
+      [userId],
+    );
+
+    return rows[0] ?? null;
+  } finally {
+    conn.release?.();
+  }
+}

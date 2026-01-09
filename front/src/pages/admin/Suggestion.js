@@ -217,8 +217,8 @@ export default function AdSugg() {
                   <th>분류</th>
                   <th>작성자</th>
                   <th>작성일</th>
-                  <th>답변여부</th>
                   <th>답변일</th>
+                  <th>답변여부</th>
                 </tr>
               </thead>
 
@@ -247,6 +247,7 @@ export default function AdSugg() {
                           : <span>{it.userNickname || '비회원'}</span>}
                       </td>
                       <td>{fmtTime(it.createdAt)}</td>
+                      <td>{fmtTime(it.answeredAt)}</td>
                       <td>
                         {it.status != null ? (
                           <div className={`chip ${it.status === 'ANSWERED' ? 'chip-answered' : 'chip-pending'}`}>
@@ -254,7 +255,6 @@ export default function AdSugg() {
                           </div>
                         ) : '-'}
                       </td>
-                      <td>{fmtTime(it.answeredAt)}</td>
                     </tr>
                   );
                 })}

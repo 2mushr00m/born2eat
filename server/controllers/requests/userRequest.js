@@ -71,3 +71,18 @@ export function buildPasswordPayload(req) {
 
   return payload;
 }
+
+/** 관리자 회원 목록 필터
+ * @param {import('express').Request} req
+ * @returns {user.ListFilter} */
+export function buildAdminUserListFilter(req) {
+  const { q, sort, status, page = 1, limit = 10 } = req.query;
+
+  return {
+    q: q?.trim() || null,
+    sort: sort || 'recent',
+    status: status || null, // 예: active / inactive 등
+    page: Number(page),
+    limit: Number(limit),
+  };
+}

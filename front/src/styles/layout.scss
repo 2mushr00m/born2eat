@@ -19,8 +19,7 @@
 }
 .admin-theme {
   html, body { overflow-x: auto; }
-  main { min-width: 1280px;}
-  .header__welcome {display: none;}
+  header, footer, main { min-width: 1280px;}
   .header__nav li:hover{color: $accent-sub; border-color: $accent-sub;}
   .toggle-click {background-color: #fff; border-color: #fff; color: #000;}
   .toggle-click:hover { background-color: $accent-sub; border-color: $accent-sub; }
@@ -64,9 +63,19 @@
       border: 1px solid $gray; border-radius: 50px;
       padding: 3px 12px;
       font: inherit;
-      color: inherit;
+      color: $black;
       cursor: pointer;
     }
+  }
+
+  &__mobile{
+    display: none;
+    cursor: pointer;
+    img{width: 30px;}
+  }
+
+  &__mbSide{
+    display: none;
   }
 }
 
@@ -95,13 +104,44 @@
   }
 }
 
-@media (max-width: 768px) {
-  .header__nav, .footer__right{
-    display: none;
-  }
+// mobile - aside
+.mbside {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
 }
 
-// aside
+.mbside.is-open {
+  pointer-events: auto;
+}
+
+.mbside__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0; transition: opacity 0.3s ease;
+}
+
+.mbside.is-open .mbside__backdrop {
+  opacity: 1;
+}
+
+.mbside__panel {
+  position: absolute;
+  top: 0; right: 0;
+  width: 80%; max-width: 250px; height: 100%;
+  background: #fff;
+
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+.mbside.is-open .mbside__panel {
+  transform: translateX(0);
+}
+
+// admin - aside
 .aside {
   // background-color: #333;
   border-right: 1px solid #222;
@@ -130,8 +170,19 @@
     background-color: #fff;
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-    margin: 5% 3%; padding: 8%;
-    width: 1024px;
+    margin: 5% 3%; padding: 5%;
+    width: 1024px; max-width: 100%;
     text-align: center;
+  }
+}
+
+// 미디어쿼리
+@media (max-width: 767px) {
+  .header__nav, .footer__right{
+    display: none;
+  }
+  .header__mobile, .header__mbSide{
+    position: absolute; right: 3%;
+    display: flex; align-items: center;
   }
 }

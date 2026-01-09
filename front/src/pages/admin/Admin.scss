@@ -12,6 +12,8 @@
   &__title{
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 25px;
+    h1{color: $soft;}
+    span{color: $light;}
     button{
       border: none;
       border-radius: 50px;
@@ -122,11 +124,26 @@
   }
 }
 
+// AdHome.js
+.adHome{
+  padding-bottom: 50px;
+}
+
 
 // Member.js
 .adMain__table__MemberList{
   tbody{
     tr td{text-align: center;}
+    tr td:nth-child(2){cursor: pointer;}
+    tr td:nth-child(3){text-align: left;}
+
+    tr td:nth-child(2):hover{color: $accent-sub;}
+  }
+
+  .chip{
+    font-size: 13px;
+    &-active {background-color: #555; color: #000;}
+    &-deleted {background-color: #000; color: #555;}
   }
 }
 

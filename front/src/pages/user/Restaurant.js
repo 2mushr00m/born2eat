@@ -17,6 +17,7 @@ export default function Restaurant() {
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const myId = null; // 예: /auth/me로 받아온 값
 
   useEffect(() => {
     if (!id) return;
@@ -72,7 +73,9 @@ export default function Restaurant() {
             <h2>{restaurant.name}</h2>
             <div className=" rest__top__star">
               <p>
-                <span>{restaurant.ratingSum}</span>
+                <span>
+                  {restaurant.reviewCount ? restaurant.ratingSum / restaurant.reviewCount : restaurant.ratingSum}
+                </span>
               </p>
               <p>({restaurant.reviewCount || '0'}개)</p>
             </div>
@@ -80,6 +83,7 @@ export default function Restaurant() {
           <div className="rest__top__desc">
             <p>{restaurant.address}</p>
             <p>{restaurant.foodCategory} 전문점</p>
+            <p>☎️ {restaurant.phone}</p>
             <p>대표메뉴: {restaurant.mainFood}</p>
           </div>
           {restaurant.tags?.length > 0 && (
@@ -177,14 +181,18 @@ export default function Restaurant() {
 
                 {/* 기타 사진*/}
                 <div>
-                  {restaurant.photos.etc.length > 0 ? (
-                    restaurant.photos.etc.array.forEach((photo) => {
-                      return <img src={apiImageUrl(photo.filePath)} alt={photo.caption || '그 외 사진'} />;
-                    })
+                  {(restaurant.photos?.etc?.length ?? 0) > 0 ? (
+                    restaurant.photos.etc.map((photo, idx) => (
+                      <img
+                        key={photo.photoId ?? photo.filePath ?? idx}
+                        src={apiImageUrl(photo.filePath)}
+                        alt={photo.caption || '그 외 사진'}
+                      />
+                    ))
                   ) : (
                     <p>
                       사진이 없다면?{' '}
-                      <span onClick={() => setActiveTab(2)} style={{ textDecoration: 'underline' }}>
+                      <span onClick={() => setActiveTab(2)} style={{ textDecoration: 'underline', cursor: 'pointer' }}>
                         리뷰 보러가기 →
                       </span>
                     </p>
@@ -250,6 +258,14 @@ export default function Restaurant() {
                               {i.photos.map((photo) => (
                                 <img key={photo.id} src={apiImageUrl(photo.path)} alt={photo.caption || '리뷰 사진'} />
                               ))}
+                            </div>
+                          </li>
+                        )}
+                        {(i.userId === myId || true) && ( // 일단은 전부 포함
+                          <li>
+                            <div className="btn-box">
+                              <button onClick={() => alert('(구현하면서 본인 것만 뜨게 바꿀 예정)')}>수정</button>
+                              <button onClick={() => alert('(구현하면서 본인 것만 뜨게 바꿀 예정)')}>삭제</button>
                             </div>
                           </li>
                         )}

@@ -7,6 +7,7 @@ tags:
   - name: Auth
   - name: Inquiries
   - name: Me
+  - name: Tags
   - name: Restaurants
   - name: Reviews
   - name: Admin
@@ -869,6 +870,59 @@ paths:
                   - success
           headers: {}
       security: []
+  /tags:
+    get:
+      summary: 태그 목록 (UI용)
+      deprecated: false
+      description: ''
+      tags:
+        - Tags
+      parameters:
+        - name: born2eat.sid
+          in: cookie
+          description: 환경에 따라 계정 변경
+          example: '{{born2eat.sid}}'
+          schema:
+            type: string
+            default: '{{born2eat.sid}}'
+        - name: type
+          in: query
+          description: 태그 타입
+          required: true
+          example: tag
+          schema:
+            type: string
+            enum:
+              - food
+              - tag
+        - name: Set-Cookie
+          in: header
+          description: ''
+          example: '{{Set-Cookie}}'
+          schema:
+            type: string
+            default: '{{Set-Cookie}}'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    default: true
+                    description: 성공 여부
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tag'
+                required:
+                  - result
+                  - success
+          headers: {}
+      security: []
   /restaurants:
     get:
       summary: 음식점 목록
@@ -978,7 +1032,7 @@ paths:
           in: path
           description: ''
           required: true
-          example: 1
+          example: 76
           schema:
             type: integer
         - name: Set-Cookie
@@ -3289,6 +3343,59 @@ components:
         - name
         - mainPhoto
         - region
+    Tag:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 코드
+        name:
+          type: string
+          description: 태그명
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          description: 자식 태그
+      required:
+        - code
+        - name
+    AdminTag:
+      type: object
+      properties:
+        tagId:
+          type: string
+          description: 태그 PK
+        name:
+          type: string
+          description: 태그명
+        code:
+          type: string
+          description: 코드
+        type:
+          type: string
+          enum:
+            - tag
+            - food
+          description: 타입
+        clickCount:
+          type: integer
+          description: 클릭 수
+        usageCount:
+          type: integer
+          description: 사용 수
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminTag'
+          description: 자식 태그
+      required:
+        - code
+        - name
+        - tagId
+        - clickCount
+        - type
+        - usageCount
     ResponseSuccess:
       type: object
       properties:

@@ -5,34 +5,24 @@ import { TagType } from './enum';
 declare global {
   namespace tag {
     // ======= Controller → Service ==========
-
     type CreatePayload = {};
 
     type UpdatePayload = {};
 
     // ========== Service → Controller =======
 
-    type Item = {
-      name: string;
-      code: string;
+    type Base = { name: string; code: string };
+    type FoodNode = Base & { children?: FoodNode[] };
+    type AdminNode = Base & {
+      tagId: number;
+      type: TagType;
       clickCount: number;
       usageCount: number;
-      depth: 1;
+      children?: AdminNode[];
     };
 
-    type FoodTagNode = Base & {
-      depth: 1 | 2;
-      children?: FoodTagNode[];
-    };
-
-    type TagList = {
-      items: Item[];
-      total: number;
-    };
-
-    type FoodTagList = {
-      items: FoodTagNode;
-      total: number;
-    };
+    type TagList = Base[];
+    type FoodList = FoodNode[];
+    type AdminList = AdminNode[];
   }
 }

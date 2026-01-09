@@ -85,14 +85,14 @@ export const adminRead = wrap(async (req, res) => {
 });
 
 /** POST /admin/restaurants */
-export const adminCreate = wrap(async (req, res) => {
+export const create = wrap(async (req, res) => {
   const payload = buildCreatePayload(req);
   const restaurantId = await createRestaurant(payload);
   created(res, { id: restaurantId });
 });
 
 /** PATCH /admin/restaurants/:restaurantId */
-export const adminUpdate = wrap(async (req, res) => {
+export const update = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
   const payload = buildUpdatePayload(req);
   await updateRestaurant(restaurantId, payload);
@@ -100,14 +100,14 @@ export const adminUpdate = wrap(async (req, res) => {
 });
 
 /** DELETE /admin/restaurants/:restaurantId */
-export const adminDestroy = wrap(async (req, res) => {
+export const destroy = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
   await deleteRestaurant(restaurantId);
   ok(res);
 });
 
 /** POST /restaurants/:restaurantId/photos */
-export const adminCreatePhotos = wrap(async (req, res) => {
+export const createPhotos = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
   const payload = buildCreatePhotosPayload(req);
   const result = await createRestaurantPhotos(restaurantId, payload);
@@ -115,7 +115,7 @@ export const adminCreatePhotos = wrap(async (req, res) => {
 });
 
 /** DELETE /restaurants/:restaurantId/photos/:photoId */
-export const adminDestroyPhotos = wrap(async (req, res) => {
+export const destroyPhotos = wrap(async (req, res) => {
   const restaurantId = parseId(req.params?.restaurantId);
   const photoId = parseId(req.params?.photoId);
   await deleteRestaurantPhoto(restaurantId, photoId);
@@ -123,7 +123,7 @@ export const adminDestroyPhotos = wrap(async (req, res) => {
 });
 
 /** POST /admin/restaurants/sync-kakao */
-export const adminSyncKakao = wrap(async (req, res) => {
+export const syncKakao = wrap(async (req, res) => {
   const startId = parseId(req.body?.startId);
   const endId = parseId(req.body?.endId);
   const result = await syncKakaoByRange(startId, endId);

@@ -1,11 +1,18 @@
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import MbSide from "./MbSide";
 
 export default function Header() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { loading, isLoggedIn, isAdmin, logout, user } = useAuth();
   const isAdminPage = pathname.startsWith("/admin");
+
+  // 모바일 메뉴 오픈
+  const [isMbSideOpen, setIsMbSideOpen] = useState(false);
+  const openMbSide = () => setIsMbSideOpen(true);
+  const closeMbSide = () => setIsMbSideOpen(false);
 
   // 로고 클릭
   const handleLogoClick = () => {
@@ -60,7 +67,7 @@ export default function Header() {
         {/* 메뉴 */}
         <nav className="header__nav">
           <p className="header__welcome">
-            {user?.nickname ? `${user.nickname}님, 어서 오세요!` : null}
+            {!isAdmin && user?.nickname ? `${user.nickname}님, 어서 오세요!` : null}
           </p>
           <ul className="header__menu">
             {menuItems.map((item, idx) => (
@@ -83,6 +90,13 @@ export default function Header() {
             </button>
           )}
         </nav>
+
+        <div className="header__mobile" onClick={openMbSide}>
+          <img src="/assets/icon_ham.png" alt="ham"/>
+        </div>
+        <div className="header__mbSide">
+          <MbSide isOpen={isMbSideOpen} onClose={closeMbSide} />
+        </div>
       </div>
     </header>
   );

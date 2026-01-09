@@ -19,7 +19,7 @@ export default function AdSide() {
           <li><Link to="/admin/tag">→ 태그목록</Link></li>
 
           <li><h3>사이트관리</h3></li>
-          <li><Link to="/admin">→ 유입통계</Link></li>
+          <li><Link to="/admin">→ 대시보드</Link></li>
         </ul>
       </div>
     </aside>

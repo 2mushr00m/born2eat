@@ -1,7 +1,81 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AdminUserListApi } from '../../api/admin';
+import AdPagination from './components/AdPagination.js';
 
+export default function AdMember() {
+  const navigate = useNavigate();
 
-export default function AdMember(){
-  return(
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [errMsg, setErrMsg] = useState('');
+
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [sort, setSort] = useState('recent');
+
+  const [searchField, setSearchField] = useState('');
+  const [inputQ, setInputQ] = useState('');
+  const [q, setQ] = useState('');
+
+  useEffect(() => {
+    let alive = true;
+
+    async function fetchList() {
+      setLoading(true);
+      setErrMsg('');
+      try {
+        const params = {
+          page,
+          limit,
+          sort,
+          searchField: searchField || undefined,
+          q: q || undefined,
+        };
+
+        const { data } = await AdminUserListApi(params);
+        if (!alive) return;
+
+        const result = data?.result ?? {};
+        setItems(Array.isArray(result.items) ? result.items : []);
+        setTotal(Number(result.total) || 0);
+
+        const serverPage = Number(result.page);
+        const serverLimit = Number(result.limit);
+        if (Number.isFinite(serverPage) && serverPage > 0) setPage(serverPage);
+        if (Number.isFinite(serverLimit) && serverLimit > 0) setLimit(serverLimit);
+      } catch (e) {
+        if (!alive) return;
+        setErrMsg('회원 목록을 불러오지 못했습니다.');
+        setItems([]);
+        setTotal(0);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+
+    fetchList();
+    return () => {
+      alive = false;
+    };
+  }, [page, limit, sort, searchField, q]);
+
+  const onSearch = () => {
+    setPage(1);
+    setQ(inputQ.trim());
+  };
+
+  const onResetAll = () => {
+    setPage(1);
+    setLimit(10);
+    setSort('recent');
+    setSearchField('');
+    setInputQ('');
+    setQ('');
+  };
+
+  return (
     <div className="adMain">
       <section className="adMain__wrap">
 
@@ -13,32 +87,68 @@ export default function AdMember(){
         {/* 필터/검색 + 로딩/정렬 */}
         <article className="adMain__nav">
           <div className="adMain__nav__search">
-            <div className='filter-box-admin'>
-              <span>검색범위</span>
-              <span>(셀렉트)</span>
-            
-              <span>페이지당</span>
-              <span>(셀렉트)</span>
+            <div className="filter-box-admin">
+              <div>
+                <p>검색범위</p>
+                <select
+                  value={searchField}
+                  onChange={(e) => {
+                    setPage(1);
+                    setSearchField(e.target.value);
+                  }}
+                >
+                  <option value="">전체</option>
+                  <option value="nickname">닉네임</option>
+                  <option value="email">아이디</option>
+                  <option value="status">회원상태</option>
+                </select>
+              </div>
+
+              <div>
+                <p>페이지당</p>
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setPage(1);
+                    setLimit(Number(e.target.value));
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
             </div>
-            <div className='search-box-admin'>
+
+            <div className="search-box-admin">
               <input
+                value={inputQ}
+                onChange={(e) => setInputQ(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && onSearch()}
                 placeholder="검색어를 입력해주세요."
               />
-              <button type="button">
-                검색
-              </button>
-              <button type="button">
-                초기화
-              </button>
+              <button type="button" onClick={onSearch}>검색</button>
+              <button type="button" onClick={onResetAll}>초기화</button>
             </div>
           </div>
+
           <div className="adMain__nav__sort">
             <div>
-              로딩중 / 총 n개
+              {loading && <p>Loading...</p>}
+              {!loading && errMsg && <p>{errMsg}</p>}
+              {!loading && !errMsg && <p>총 회원 수: {total}명</p>}
             </div>
 
             <div>
-              (sort 셀렉트)
+              <select
+                value={sort}
+                onChange={(e) => {
+                  setPage(1);
+                  setSort(e.target.value);
+                }}
+              >
+                <option value="recent">최근가입순</option>
+              </select>
             </div>
           </div>
         </article>
@@ -46,7 +156,7 @@ export default function AdMember(){
         {/* 테이블 */}
         <article className="adMain__table">
           <div>
-            <table  className='adMain__table__MemberList'>
+            <table className="adMain__table__MemberList">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -59,19 +169,53 @@ export default function AdMember(){
               </thead>
 
               <tbody>
-                <tr>
-                  <td>1</td>
-                  <td>홍길동</td>
-                  <td>hong@mail.com</td>
-                  <td>010-0000-0000</td>
-                  <td>2000-00-00</td>
-                  <td>일반회원</td>
-                </tr>
+                {!loading && items.length === 0 && (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center' }}>
+                      표시할 회원이 없습니다.
+                    </td>
+                  </tr>
+                )}
+
+                {items.map((u) => (
+                  <tr key={u.userId}>
+                    <td>{u.userId}</td>
+                    <td onClick={() => navigate(`/admin/member/${u.userId}`)}>
+                      {u.nickname || '-'}
+                    </td>
+                    <td>{u.email || '-'}</td>
+                    <td>-</td>
+                    <td>{u.createdAt?.slice(0, 10) || '-'}</td>
+                    <td>
+                      {u.status ? (
+                        <div
+                          className={`chip ${
+                            u.status === 'ACTIVE' ? 'chip-active' :
+                            u.status === 'DELETED' ? 'chip-deleted' : ''
+                          }`}
+                        >
+                          {u.status}
+                        </div>
+                      ) : '-'}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </article>
+
+        {/* 페이지네이션 */}
+        <article className="adMain__pagenation">
+          <AdPagination
+            page={page}
+            total={total}
+            limit={limit}
+            onChange={(p) => setPage(p)}
+          />
+        </article>
+
       </section>
     </div>
   );
-};
+}

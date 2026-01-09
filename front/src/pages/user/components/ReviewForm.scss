@@ -8,17 +8,14 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-
-  h3 {
-    font-size: 20px;
-    color: $brown;
+  padding: 20px;
+  text-align: center;
+  h3 {font-size: 20px; color: $brown;}
+  textarea{ padding: 10px;}
+  .rating-box{
+    span{color: $accent;}
+    p{margin-top: 5px;}
   }
-
-  p {
-    font-size: 15px;
-    color: #666;
-  }
-
   .btn-box {
     justify-content: center;
   }

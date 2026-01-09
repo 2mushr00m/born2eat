@@ -201,3 +201,14 @@ export const deleteRestPhotos = (restaurantId, photoId) => {
   if (!photoId) throw new Error('photoId is required');
   return api.delete(`/admin/restaurants/${restaurantId}/photos/${photoId}`);
 };
+
+// 회원 목록 조회
+export const AdminUserListApi = (params) => api.get('/admin/users', { params });
+
+// 회원 상세 조회
+export const AdminUserDetailApi = (userId) => api.get(`/admin/users/${userId}`);
+
+// 식당 신규 등록
+export const createRest = (payload) => {
+  return api.post('/admin/restaurants', payload);
+};
